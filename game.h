@@ -8,24 +8,36 @@ class Ray
   public:
 	Ray(vec3 origin, vec3 direction);
 	vec3 origin, direction;
-	float t = 1000000.0f;
+	float t;
+	void SetT(float haha);
 };
 
 class Primitive
 {
   public:
-	virtual void Intersect( Ray ray ) = 0;
+	virtual void Intersect( Ray &ray ) = 0;
 };
 
 class Sphere : public Primitive
 {
   public:
 	Sphere( vec3 pos, float r );
-	void Intersect( Ray ray ) override;
+	void Intersect( Ray &ray ) override;
 
   private:
 	vec3 position;
 	float r2;
+};
+
+class Plane : public Primitive
+{
+  public:
+	Plane(vec3 normal, float dist);
+	void Intersect(Ray &ray) override;
+
+  private:
+	vec3 normal;
+	float dist;
 };
 
 class Camera
@@ -33,13 +45,14 @@ class Camera
   public:
 	Camera( vec3 pos, vec3 dir, float FOV, int screenWidth, int screenHeight );
 	Ray GetRay(int x, int y);
-	vec3 position, direction;
+	vec3 position, direction, screenTopLeft;
 	float FOV;
 	int screenWidth, screenHeight;
 
   private:
 	vec3 screenCenter;
 	vec3 ScreenCorner(int corner = 0);
+	vec3 xinc, yinc;
 };
 
 class Light
@@ -80,7 +93,7 @@ class Game
 	{ /* implement if you want to handle keys */
 	}
 
-	std::array<Primitive *, 1> primitives;
+	std::array<Primitive *, 3> primitives;
 	std::array<Light *, 1> lights;
 	Camera* cam;
 
