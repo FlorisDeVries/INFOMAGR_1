@@ -8,8 +8,7 @@ class Ray
   public:
 	Ray(vec3 origin, vec3 direction);
 	vec3 origin, direction;
-	float t;
-	void SetT(float haha);
+	float t = 1000.0f;
 };
 
 class Primitive

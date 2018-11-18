@@ -66,13 +66,9 @@ Camera::Camera( vec3 pos, vec3 dir, float FOV, int screenWidth, int screenHeight
 
 Ray Tmpl8::Camera::GetRay( int x, int y )
 {
-	if (x == 400 && y == 400) {
-		printf("help\n");
-	}
 	vec3 rayDirection = ( ( screenTopLeft + x * xinc + y * yinc ) - position ).normalized();
 
 	Ray r = Ray(position, rayDirection);
-	r.t = 1000.0f;
 
 	return r;
 }
@@ -124,12 +120,6 @@ Light::Light( vec3 col, vec3 pos ) : color( col ), position( pos )
 
 Tmpl8::Ray::Ray( vec3 origin, vec3 direction ) : origin( origin ), direction(direction)
 {
-	t = 1000.0f;
-}
-
-void Tmpl8::Ray::SetT(float haha)
-{
-	t = haha;
 }
 
 Tmpl8::Plane::Plane(vec3 normal, float dist) : normal(normal.normalized()), dist(dist)
