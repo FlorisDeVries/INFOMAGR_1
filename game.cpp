@@ -9,10 +9,10 @@ void Game::Init()
 	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
 	//Spheres
-	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 1.0f, 1.0f), 0.01f));
-	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(1.0f, 1.0f, 1.0f), 0.01f));
+	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.1f));
+	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.1f));
 	primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.9f));
-	primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(1.0f, 1.0f, 1.0f), 0.01f));
+	primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(0.3f, 0.3f, 0.3f), 0.1f));
 
 	//Box
 	primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
@@ -31,7 +31,6 @@ void Game::Init()
 	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, -8, -8)));
 	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, 8, -8)));
 	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, -8, -8)));
-	lights.push_back(new PointLight(vec3(10000, 10000, 10000), vec3(0, 0, -8)));
 }
 
 // -----------------------------------------------------------
@@ -68,7 +67,7 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 					break;
 			}
 			if (shadow.t == 0 || shadow.t < maxL)
-				break;
+				continue;
 			color += 
 				l->color *													// Light color
 				intersection.primitive->color *								// Primitive color
