@@ -1,5 +1,6 @@
 #pragma once
-#include <array>
+#include <vector>
+#include <limits>
 
 namespace Tmpl8
 {
@@ -8,20 +9,29 @@ class Ray
   public:
 	Ray(vec3 origin, vec3 direction);
 	vec3 origin, direction;
-	float t = 1000.0f;
+};
+
+class Primitive;
+
+class Intersection
+{
+public:
+	vec3 position, normal;
+	float t = std::numeric_limits<float>::max();
+	Primitive* primitive;
 };
 
 class Primitive
 {
   public:
-	virtual void Intersect( Ray &ray ) = 0;
+	virtual void Intersect( Ray &ray , Intersection &intersection) = 0;
 };
 
 class Sphere : public Primitive
 {
   public:
 	Sphere( vec3 pos, float r );
-	void Intersect( Ray &ray ) override;
+	void Intersect( Ray &ray, Intersection &intersection) override;
 
   private:
 	vec3 position;
@@ -32,7 +42,7 @@ class Plane : public Primitive
 {
   public:
 	Plane(vec3 normal, float dist);
-	void Intersect(Ray &ray) override;
+	void Intersect(Ray &ray, Intersection &intersection) override;
 
   private:
 	vec3 normal;
@@ -42,7 +52,7 @@ class Plane : public Primitive
 class Camera
 {
   public:
-	Camera( vec3 pos, vec3 dir, float FOV, int screenWidth, int screenHeight );
+	Camera( vec3 pos, vec3 dir, float FOV );
 	Ray GetRay(int x, int y);
 	vec3 position, direction, screenTopLeft;
 	float FOV;
@@ -58,7 +68,8 @@ class Light
 {
   public:
 	Light( vec3 col, vec3 pos );
-	vec3 color, position;
+	vec3 position;
+	vec3 color;
 	virtual bool InLoS() = 0;
 };
 
@@ -92,8 +103,8 @@ class Game
 	{ /* implement if you want to handle keys */
 	}
 
-	std::array<Primitive *, 3> primitives;
-	std::array<Light *, 1> lights;
+	std::vector<Primitive *> primitives;
+	std::vector<Light *> lights;
 	Camera* cam;
 
   private:

@@ -5,10 +5,14 @@
 // -----------------------------------------------------------
 void Game::Init()
 {
-	cam = new Camera( vec3( 0, 0, -20 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ), 1, 1 );
-	primitives[0] = new Sphere(vec3(0, 0, 0), 4);
-	primitives[1] = new Sphere(vec3(10, 0, 0), 4);
-	primitives[2] = new Plane(vec3(0, -1, 0), 1);
+	cam = new Camera( vec3( 0, 0, -20 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
+	primitives.push_back(new Sphere(vec3(0, 0, 0), 4));
+	primitives.push_back(new Sphere(vec3(10, 0, 0), 4));
+	primitives.push_back(new Sphere(vec3(-10, 8, 5), 8));
+	primitives.push_back(new Sphere(vec3(-2, -13, 8), 6));
+	primitives.push_back(new Plane(vec3(0, -1, 0), 10));
+
+	lights.push_back(new PointLight(vec3(1000, 1000, 1000), vec3(0, 20, 0)));
 }
 
 // -----------------------------------------------------------
@@ -38,15 +42,45 @@ void Game::Tick( float deltaTime )
 		for ( int x = 0; x < xlim; x++ )
 		{
 			// Cast a ray and plot result
+			Intersection intersection;
 			Ray ray = cam->GetRay( x, y );
-			for ( int i = 0; i < 3; i++ )
+			for ( auto p : primitives )
 			{
-				primitives[i]->Intersect( ray );
+				p->Intersect( ray , intersection);
 			}
-			if ( ray.t < 1000.0f)
+
+			if ( intersection.t < std::numeric_limits<float>::max())
 			{
+				//Shadow rays
+
+				if (x == 400 && y == 400) {
+					printf("middle\n");
+				}
+
+				vec3 color = vec3(0, 0, 0);
+				for (auto l : lights)
+				{
+					vec3 or = intersection.position + intersection.normal * 0.001f;
+					vec3 dir = l->position - or;
+					float maxL = dir.length();
+					Ray r(or, dir * (1.0f / maxL));
+					Intersection shadow;
+					for (auto p: primitives)
+					{
+						p->Intersect(r, shadow);
+						if (shadow.t < maxL)
+							break;
+					}
+					if (shadow.t < maxL)
+						break;
+					
+					color += l->color * dot(intersection.normal, dir * (1.0f / maxL));
+				}
 				spherepixels++;
-				*pointer = 0xFFFFFF;
+				*pointer = (((min(256u, (uint)color.x)) << 16) & REDMASK) + (((min(256u, (uint)color.y)) << 8) & GREENMASK) + ((min(256u, (uint)color.z)) & BLUEMASK);
+			}
+			else {
+				*pointer = 0x6495ED;
 			}
 			pointer += 1;
 		}
@@ -55,7 +89,7 @@ void Game::Tick( float deltaTime )
 	printf("Spherepixels for frame %i: %i (of %i)\n", frame, spherepixels, xlim * ylim);
 }
 
-Camera::Camera( vec3 pos, vec3 dir, float FOV, int screenWidth, int screenHeight ) : position( pos ), direction( dir ), FOV( FOV ), screenWidth( screenWidth ), screenHeight( screenHeight )
+Camera::Camera( vec3 pos, vec3 dir, float FOV ) : position( pos ), direction( dir ), FOV( FOV ), screenWidth( screenWidth ), screenHeight( screenHeight )
 {
 	screenCenter = pos + dir * FOV;
 	screenTopLeft = ScreenCorner(0);
@@ -97,7 +131,7 @@ Sphere::Sphere( vec3 pos, float r ) : position( pos ), r2( r * r )
 {
 }
 
-void Tmpl8::Sphere::Intersect( Ray &ray )
+void Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection)
 {
 	vec3 C = position - ray.origin;
 	float t = dot( C, ray.direction );
@@ -105,8 +139,11 @@ void Tmpl8::Sphere::Intersect( Ray &ray )
 	float p2 = dot( Q, Q );
 	if ( p2 > r2 ) return; // r2 = r * r
 	t -= sqrt( ( r2 - p2 ) );
-	if ((t < ray.t) && (t > 0)) { 
-		ray.t = t;
+	if ((t < intersection.t) && (t > 0)) { 
+		intersection.primitive = this;
+		intersection.position = ray.origin + ray.direction * t;
+		intersection.normal = (intersection.position - position).normalized();
+		intersection.t = t;
 	}
 }
 
@@ -127,13 +164,17 @@ Tmpl8::Plane::Plane(vec3 normal, float dist) : normal(normal.normalized()), dist
 }
 
 //Taken from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
-void Tmpl8::Plane::Intersect(Ray & ray)
+void Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 {
-	float denom = dot(normal, ray.direction);
+	float denom = dot(ray.direction, normal);
 	if (denom > 0.00001f) {
 		vec3 p0l0 = normal * dist - ray.origin;
-		float t = dot(normal, p0l0);
-		if (t >= 0 && t < ray.t) 
-			ray.t = t;
+		float t = dot(normal, p0l0) / denom;
+		if (t >= 0 && t < intersection.t) {
+			intersection.primitive = this;
+			intersection.position = ray.origin + ray.direction * t;
+			intersection.normal = normal;
+			intersection.t = t;
+		}
 	}
 }
