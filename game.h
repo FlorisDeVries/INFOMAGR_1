@@ -2,6 +2,9 @@
 #include <vector>
 #include <limits>
 
+#define EPSILON 0.001f
+#define MAX_DEPTH 10
+
 namespace Tmpl8
 {
 class Ray
@@ -25,15 +28,16 @@ class Primitive
 {
   public:
 	vec3 color;
+	float specularity;
 	virtual void Intersect( Ray &ray , Intersection &intersection) = 0;
 protected:
-	Primitive(vec3 color) : color(color) {};
+	Primitive(vec3 color, float specularity) : color(color), specularity(specularity) {};
 };
 
 class Sphere : public Primitive
 {
   public:
-	  Sphere(vec3 pos, float r, vec3 color) : position(pos), r2(r * r), Primitive(color) {};
+	  Sphere(vec3 pos, float r, vec3 color, float specularity) : position(pos), r2(r * r), Primitive(color, specularity) {};
 	void Intersect( Ray &ray, Intersection &intersection) override;
 
   private:
@@ -44,7 +48,7 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	  Plane(vec3 normal, float dist, vec3 color) : normal(normal.normalized()), dist(dist), Primitive(color) {};
+	  Plane(vec3 normal, float dist, vec3 color, float specularity) : normal(normal.normalized()), dist(dist), Primitive(color, specularity) {};
 	void Intersect(Ray &ray, Intersection &intersection) override;
 
   private:
@@ -89,6 +93,7 @@ class Game
 	void SetTarget( Surface *surface ) { screen = surface; }
 	void Init();
 	void Shutdown();
+	vec3 Trace(Ray ray, int recursionDepth);
 	void Tick( float deltaTime );
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */

@@ -5,14 +5,33 @@
 // -----------------------------------------------------------
 void Game::Init()
 {
-	cam = new Camera( vec3( 0, 0, -20 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
-	primitives.push_back(new Sphere(vec3(0, 0, 0), 4, vec3(0.1f, 0.1f, 1.0f)));
-	primitives.push_back(new Sphere(vec3(10, 0, 0), 4, vec3(1.0f, 0.1f, 0.1f)));
-	primitives.push_back(new Sphere(vec3(-10, 8, 5), 8, vec3(0.1f, 1.0f, 0.1f)));
-	primitives.push_back(new Sphere(vec3(-2, -13, 8), 6, vec3(1.0f, 1.0f, 1.0f)));
-	primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.0f, 1.0f, 1.0f)));
+	//Setting up the scene
+	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
-	lights.push_back(new PointLight(vec3(15000000, 15000000, 15000000), vec3(0, 200, 0)));
+	//Spheres
+	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.01f));
+	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.01f));
+	primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.9f));
+	primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(1.0f, 1.0f, 1.0f), 0.01f));
+
+	//Box
+	primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
+	primitives.push_back(new Plane(vec3(-1, 0, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.01f));
+	primitives.push_back(new Plane(vec3(0, 0, 1), 10, vec3(1.0f, 0.3f, 0.3f), 0.01f));
+	primitives.push_back(new Plane(vec3(0, 0, -1), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
+	primitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.01f));
+	primitives.push_back(new Plane(vec3(1, 0, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
+
+	//Lights
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, 8, 8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, 8, 8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, -8, 8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, -8, 8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, 8, -8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, -8, -8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, 8, -8)));
+	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, -8, -8)));
+	lights.push_back(new PointLight(vec3(10000, 10000, 10000), vec3(0, 0, -8)));
 }
 
 // -----------------------------------------------------------
@@ -20,6 +39,60 @@ void Game::Init()
 // -----------------------------------------------------------
 void Game::Shutdown()
 {
+}
+
+vec3 Game::Trace(Ray ray, int recursionDepth) {
+	vec3 color = vec3(0,0,0);
+	// Cast a ray and plot result
+	Intersection intersection;
+	for (auto p : primitives)
+	{
+		p->Intersect(ray, intersection);
+	}
+
+	if (intersection.t < std::numeric_limits<float>::max())
+	{
+		//Non-specular part
+		//Shadow rays
+		for (auto l : lights)
+		{
+			vec3 or = intersection.position + intersection.normal * EPSILON;
+			vec3 dir = l->position - or ;
+			float maxL = dir.length();
+			Ray r(or , dir * (1.0f / maxL));
+			Intersection shadow;
+			for (auto p : primitives)
+			{
+				p->Intersect(r, shadow);
+				if (shadow.t == 0 || shadow.t < maxL)
+					break;
+			}
+			if (shadow.t == 0 || shadow.t < maxL)
+				break;
+			color += 
+				l->color *													// Light color
+				intersection.primitive->color *								// Primitive color
+				max(0.0f, dot(intersection.normal, dir * (1.0f / maxL))) *	// L dot N
+				(1.0f / (maxL * maxL)) *									// Distance attentuation
+				(1.0f - ((recursionDepth == 0)? 0.0f :intersection.primitive->specularity));				// Non-specularity
+		}
+		//Specular part
+		float specularity = intersection.primitive->specularity;
+		if (recursionDepth > 0 && specularity > 0.0f) {
+			vec3 or = intersection.position + intersection.normal * EPSILON;
+			vec3 dir = (ray.direction - 2 * dot(ray.direction, intersection.normal) * intersection.normal).normalized();
+
+			Ray r = Ray(or , dir);
+			vec3 reflectiveColor = Trace(r, recursionDepth - 1);
+			color += specularity * reflectiveColor;
+		}
+	}
+	else {
+		//TODO: HDR, other no-hit methods?
+		color = vec3(6 * 16 + 4, 16 * 9 + 5, 16 * 14 + 13); // Cornflower blue
+	}
+
+	return color;
 }
 
 static int frame = 0;
@@ -35,60 +108,22 @@ void Game::Tick( float deltaTime )
 	int xlim = screen->GetWidth(), ylim = screen->GetHeight();
 	Pixel *pointer = screen->GetBuffer();
 
-	int spherepixels = 0;
-
 	for ( int y = 0; y < ylim; y++ )
 	{
 		for ( int x = 0; x < xlim; x++ )
 		{
-			// Cast a ray and plot result
-			Intersection intersection;
-			Ray ray = cam->GetRay( x, y );
-			for ( auto p : primitives )
-			{
-				p->Intersect( ray , intersection);
+			if (x == 400 && y == 400) {
+				//printf("middle\n");
 			}
+			Ray ray = cam->GetRay(x, y);
+			vec3 color = Trace(ray, MAX_DEPTH);
 
-			if ( intersection.t < std::numeric_limits<float>::max())
-			{
-				//Shadow rays
-
-				if (x == 400 && y == 400) {
-					printf("middle\n");
-				}
-
-				vec3 color = vec3(0, 0, 0);
-				for (auto l : lights)
-				{
-					vec3 or = intersection.position + intersection.normal * 0.001f;
-					vec3 dir = l->position - or;
-					float maxL = dir.length();
-					Ray r(or, dir * (1.0f / maxL));
-					Intersection shadow;
-					for (auto p: primitives)
-					{
-						p->Intersect(r, shadow);
-						if (shadow.t == 0 || shadow.t < maxL)
-							break;
-					}
-					if (shadow.t == 0 || shadow.t < maxL)
-						break;
-					vec3 help = intersection.primitive->color;
-					color += l->color * help * max(0.0f, dot(intersection.normal, dir * (1.0f / maxL))) * (1.0f / (maxL * maxL));
-				}
-				spherepixels++;
-				uint max = 255;
-				uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
-				*pointer = temp;
-			}
-			else {
-				*pointer = 0x6495ED;
-			}
+			uint max = 255;
+			uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
+			*pointer = temp;
 			pointer += 1;
 		}
 	}
-
-	printf("Spherepixels for frame %i: %i (of %i)\n", frame, spherepixels, xlim * ylim);
 }
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV ) : position( pos ), direction( dir ), FOV( FOV ), screenWidth( screenWidth ), screenHeight( screenHeight )
@@ -149,7 +184,7 @@ void Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection)
 void Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 {
 	float denom = dot(ray.direction, normal);
-	if (denom > 0.00001f) {
+	if (denom > EPSILON) {
 		vec3 p0l0 = normal * dist - ray.origin;
 		float t = dot(normal, p0l0) / denom;
 		if (t >= 0 && t < intersection.t) {
