@@ -6,13 +6,13 @@
 void Game::Init()
 {
 	cam = new Camera( vec3( 0, 0, -20 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
-	primitives.push_back(new Sphere(vec3(0, 0, 0), 4));
-	primitives.push_back(new Sphere(vec3(10, 0, 0), 4));
-	primitives.push_back(new Sphere(vec3(-10, 8, 5), 8));
-	primitives.push_back(new Sphere(vec3(-2, -13, 8), 6));
-	primitives.push_back(new Plane(vec3(0, -1, 0), 10));
+	primitives.push_back(new Sphere(vec3(0, 0, 0), 4, vec3(0.1f, 0.1f, 1.0f)));
+	primitives.push_back(new Sphere(vec3(10, 0, 0), 4, vec3(1.0f, 0.1f, 0.1f)));
+	primitives.push_back(new Sphere(vec3(-10, 8, 5), 8, vec3(0.1f, 1.0f, 0.1f)));
+	primitives.push_back(new Sphere(vec3(-2, -13, 8), 6, vec3(1.0f, 1.0f, 1.0f)));
+	primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.0f, 1.0f, 1.0f)));
 
-	lights.push_back(new PointLight(vec3(1000, 1000, 1000), vec3(0, 20, 0)));
+	lights.push_back(new PointLight(vec3(15000000, 15000000, 15000000), vec3(0, 200, 0)));
 }
 
 // -----------------------------------------------------------
@@ -68,16 +68,18 @@ void Game::Tick( float deltaTime )
 					for (auto p: primitives)
 					{
 						p->Intersect(r, shadow);
-						if (shadow.t < maxL)
+						if (shadow.t == 0 || shadow.t < maxL)
 							break;
 					}
-					if (shadow.t < maxL)
+					if (shadow.t == 0 || shadow.t < maxL)
 						break;
-					
-					color += l->color * dot(intersection.normal, dir * (1.0f / maxL));
+					vec3 help = intersection.primitive->color;
+					color += l->color * help * max(0.0f, dot(intersection.normal, dir * (1.0f / maxL))) * (1.0f / (maxL * maxL));
 				}
 				spherepixels++;
-				*pointer = (((min(256u, (uint)color.x)) << 16) & REDMASK) + (((min(256u, (uint)color.y)) << 8) & GREENMASK) + ((min(256u, (uint)color.z)) & BLUEMASK);
+				uint max = 255;
+				uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
+				*pointer = temp;
 			}
 			else {
 				*pointer = 0x6495ED;
@@ -127,10 +129,6 @@ vec3 Tmpl8::Camera::ScreenCorner( int corner )
 	return vec3();
 }
 
-Sphere::Sphere( vec3 pos, float r ) : position( pos ), r2( r * r )
-{
-}
-
 void Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection)
 {
 	vec3 C = position - ray.origin;
@@ -147,22 +145,6 @@ void Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection)
 	}
 }
 
-PointLight::PointLight( vec3 col, vec3 pos ) : Light( col, pos )
-{
-}
-
-Light::Light( vec3 col, vec3 pos ) : color( col ), position( pos )
-{
-}
-
-Tmpl8::Ray::Ray( vec3 origin, vec3 direction ) : origin( origin ), direction(direction)
-{
-}
-
-Tmpl8::Plane::Plane(vec3 normal, float dist) : normal(normal.normalized()), dist(dist)
-{
-}
-
 //Taken from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
 void Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 {
@@ -173,7 +155,7 @@ void Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 		if (t >= 0 && t < intersection.t) {
 			intersection.primitive = this;
 			intersection.position = ray.origin + ray.direction * t;
-			intersection.normal = normal;
+			intersection.normal = -1.0f * normal;
 			intersection.t = t;
 		}
 	}

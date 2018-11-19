@@ -7,7 +7,7 @@ namespace Tmpl8
 class Ray
 {
   public:
-	Ray(vec3 origin, vec3 direction);
+	  Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {};
 	vec3 origin, direction;
 };
 
@@ -24,13 +24,16 @@ public:
 class Primitive
 {
   public:
+	vec3 color;
 	virtual void Intersect( Ray &ray , Intersection &intersection) = 0;
+protected:
+	Primitive(vec3 color) : color(color) {};
 };
 
 class Sphere : public Primitive
 {
   public:
-	Sphere( vec3 pos, float r );
+	  Sphere(vec3 pos, float r, vec3 color) : position(pos), r2(r * r), Primitive(color) {};
 	void Intersect( Ray &ray, Intersection &intersection) override;
 
   private:
@@ -41,7 +44,7 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	Plane(vec3 normal, float dist);
+	  Plane(vec3 normal, float dist, vec3 color) : normal(normal.normalized()), dist(dist), Primitive(color) {};
 	void Intersect(Ray &ray, Intersection &intersection) override;
 
   private:
@@ -67,7 +70,7 @@ class Camera
 class Light
 {
   public:
-	Light( vec3 col, vec3 pos );
+	  Light(vec3 col, vec3 pos) : color(col), position(pos) {};
 	vec3 position;
 	vec3 color;
 	virtual bool InLoS() = 0;
@@ -76,7 +79,7 @@ class Light
 class PointLight : public Light
 {
   public:
-	PointLight( vec3 col, vec3 pos );
+	  PointLight(vec3 col, vec3 pos) : Light(col, pos) {};
 	inline bool InLoS() override { return true; }
 };
 
