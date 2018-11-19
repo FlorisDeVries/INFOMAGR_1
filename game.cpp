@@ -9,8 +9,8 @@ void Game::Init()
 	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
 	//Spheres
-	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.01f));
-	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.01f));
+	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 1.0f, 1.0f), 0.01f));
+	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(1.0f, 1.0f, 1.0f), 0.01f));
 	primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.9f));
 	primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(1.0f, 1.0f, 1.0f), 0.01f));
 
@@ -74,7 +74,7 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 				intersection.primitive->color *								// Primitive color
 				max(0.0f, dot(intersection.normal, dir * (1.0f / maxL))) *	// L dot N
 				(1.0f / (maxL * maxL)) *									// Distance attentuation
-				(1.0f - ((recursionDepth == 0)? 0.0f :intersection.primitive->specularity));				// Non-specularity
+				(1.0f - intersection.primitive->specularity);				// Non-specularity
 		}
 		//Specular part
 		float specularity = intersection.primitive->specularity;
@@ -84,7 +84,7 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 
 			Ray r = Ray(or , dir);
 			vec3 reflectiveColor = Trace(r, recursionDepth - 1);
-			color += specularity * reflectiveColor;
+			color += specularity * reflectiveColor * intersection.primitive->color;
 		}
 	}
 	else {

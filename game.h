@@ -3,7 +3,7 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 10
+#define MAX_DEPTH 4
 
 namespace Tmpl8
 {
