@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera(vec3(0, 0, -8), vec3(0, 0, 1), 1.0f / tanf(PI / 4.0f));
+	cam = new Camera(vec3(0, 0, -20), vec3(0, 0, 1), 1.0f / tanf(PI / 4.0f));
 
 	switch (SCENE) {
 	case 1:
@@ -14,7 +14,8 @@ void Game::Init()
 		// Simple scene
 		primitives.push_back(new Sphere(vec3(2, 0, 9), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
 		primitives.push_back(new Sphere(vec3(0, 0, 5), 1.5f, vec3(1.f), 0.0f, .0f));
-		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.f), 0.0f, 0.0f));
+		primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
+		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.f), 0.8f, 0.0f));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0, 4, 5)));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
 #pragma endregion
@@ -258,7 +259,7 @@ bool Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 		if (t >= 0 && t < intersection.t) {
 			intersection.primitive = this;
 			intersection.position = ray.origin + ray.direction * t;
-			intersection.normal = 1.0f * normal;
+			intersection.normal = -1.0f * normal;
 			intersection.t = t;
 			return true;
 		}
