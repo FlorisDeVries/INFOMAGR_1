@@ -101,6 +101,18 @@ static int frame = 0;
 // -----------------------------------------------------------
 void Game::Tick( float deltaTime )
 {
+	printf("Frame: %i\n", frame);
+	if (ONRAILS) {
+		//rotate the camera
+		float degrees = 2.0f * PI / 120.0f * frame;
+		cam->direction.x = cosf(degrees);// *cam->direction.x - sinf(degrees) * cam->direction.y;
+		cam->direction.z = sinf(degrees);// *cam->direction.x - cosf(degrees) * cam->direction.y;
+		//cam->direction.z = sinf(2.0f * PI / 360 * (frame + 180));
+		cam->direction.normalize();
+		cam->ResetBounds();
+		printf("Direction: %f, %f, %f\n", cam->direction.x, cam->direction.y, cam->direction.z);
+	}
+
 	// clear the graphics window
 	screen->Clear( 0 );
 	frame++;
@@ -161,6 +173,13 @@ vec3 Tmpl8::Camera::ScreenCorner( int corner )
 
 	}
 	return vec3();
+}
+
+void Tmpl8::Camera::ResetBounds() {
+	screenCenter = position + direction * FOV;
+	screenTopLeft = ScreenCorner(0);
+	xinc = (ScreenCorner(1) - ScreenCorner(0)) * (1.0f / SCRWIDTH);
+	yinc = (ScreenCorner(2) - ScreenCorner(0)) * (1.0f / SCRHEIGHT);
 }
 
 void Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection)

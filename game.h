@@ -5,6 +5,8 @@
 #define EPSILON 0.001f
 #define MAX_DEPTH 4
 
+#define ONRAILS true
+
 namespace Tmpl8
 {
 class Ray
@@ -64,6 +66,7 @@ class Camera
 	vec3 position, direction, screenTopLeft;
 	float FOV;
 	int screenWidth, screenHeight;
+	void ResetBounds();
 
   private:
 	vec3 screenCenter;
