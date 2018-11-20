@@ -3,8 +3,8 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 6
-#define SCENE 1
+#define MAX_DEPTH 10
+#define SCENE 2
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f

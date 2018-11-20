@@ -12,12 +12,12 @@ void Game::Init()
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back(new Sphere(vec3(1, 2, 7), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
-		primitives.push_back(new Sphere(vec3(0, 0, 5), 2.f, vec3(1.f), 0.0f, 1.54f));
-		primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
+		primitives.push_back(new Sphere(vec3(1, 0, 7), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
+		primitives.push_back(new Sphere(vec3(0, -.5f, 5), 2.f, vec3(1.f, 0, 1.f), 0.0f, 1.54f));
+		//primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
 		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.f), 0.8f, 0.0f));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0, 4, 5)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
+		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
 #pragma endregion
 		break;
 
@@ -79,7 +79,7 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 		}
 		// Refract
 		else if (intersection.primitive->refractionIndex > 0) {
-			return Refract(ray, intersection, recursionDepth);
+			return Refract(ray, intersection, recursionDepth) + DirectIllumination(ray, intersection);
 		}
 		// DirectIllumination
 		else {
@@ -138,27 +138,44 @@ vec3 Tmpl8::Game::Refract(Ray & ray, Intersection & intersection, int recursionD
 	if (recursionDepth <= 0)
 		return vec3(0);
 
-	float nfrac = dot(ray.direction, intersection.normal) ? 1 / intersection.primitive->refractionIndex : intersection.primitive->refractionIndex;
-
-	float angle = dot(intersection.normal, -1 * ray.direction);
-
-	float k = 1 - pow(nfrac, 2) * (1 - pow(angle, 2));
-
-	if (k < 0) {
-		return Trace(Reflect(ray, intersection), recursionDepth - 1);
+	float NdotI = dot(ray.direction, intersection.normal);
+	
+	float n1, n2;
+	if (NdotI < 0) {
+		n1 = 1 / intersection.primitive->refractionIndex;
+		n2 = 1;
+		NdotI *= -1.f;
 	}
 	else {
-		vec3 nD = nfrac * ray.direction;
-		vec3 nsomething = intersection.normal * (nfrac * angle - sqrtf(k));
-		vec3 transDir = nD + nsomething;
-		float n1 = 1;
-		float n2 = nfrac;
-		float RO = pow((n1 - n2) / (n1 + n2), 2);
-		float fresnel = RO + (1 - RO) * pow((1 - angle), 5);
+		n1 = 1;
+		n2 = intersection.primitive->refractionIndex;
+	}
 
-		vec3 transRayOrigin = intersection.position + transDir * EPSILON;
-		Ray transRay = Ray(transRayOrigin, transDir);
-		return Trace(transRay, recursionDepth - 1) * fresnel + (1 - fresnel) * Trace(Reflect(ray, intersection), recursionDepth - 1);
+	float cosAngle = cosf(NdotI);
+
+	float n1n2 = n1 / n2;
+
+	float k = 1 - pow(n1n2, 2) * pow(cosAngle, 2);
+
+	Ray reflectRay = Reflect(ray, intersection);
+
+	if (k < 0) {
+		Trace(reflectRay, recursionDepth - 1);
+	}
+	else {
+		// Ratio's
+		float RO = pow((n1 - n2) / (n1 + n2), 2);
+		float reflectRatio = RO + (1.f - RO) * pow(1.f - cosAngle, 5);
+
+		// Trans
+		vec3 transDirection = n1n2 * ray.direction + intersection.normal * (n1n2 * cosAngle - sqrtf(k));
+		vec3 transOrigin = intersection.position + transDirection * EPSILON;
+		vec3 transColor = Trace(Ray(transOrigin, transDirection), recursionDepth - 1) * (1 - reflectRatio);
+
+		// Reflective
+		vec3 reflectColor = Trace(reflectRay, recursionDepth - 1) * reflectRatio;
+
+		return transColor + reflectColor;
 	}
 }
 
