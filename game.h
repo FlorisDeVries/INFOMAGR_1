@@ -3,7 +3,8 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 10
+#define MAX_DEPTH 4
+#define SCENE 1
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
@@ -100,6 +101,7 @@ class Game
 	vec3 Trace(Ray ray, int recursionDepth);
 	Ray Reflect(Ray &ray, Intersection &intersection);
 	vec3 DirectIllumination(Ray &ray, Intersection &intersection);
+	vec3 Refract(Ray &ray, Intersection &intersection, int recursionDepth);
 	void Tick( float deltaTime );
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
