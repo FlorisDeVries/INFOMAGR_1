@@ -9,28 +9,29 @@ void Game::Init()
 	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
 	//Spheres
-	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.1f));
-	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.1f));
-	primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.9f));
-	primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(0.3f, 0.3f, 0.3f), 0.1f));
+	primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.0f, 1.5f));
+	primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.1f, 0.0f));
+	primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.9f, 0.0f));
+	primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(0.3f, 0.3f, 0.3f), 0.1f, 0.0f));
 
 	//Box
-	primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
-	primitives.push_back(new Plane(vec3(-1, 0, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.01f));
-	primitives.push_back(new Plane(vec3(0, 0, 1), 10, vec3(1.0f, 0.3f, 0.3f), 0.01f));
-	primitives.push_back(new Plane(vec3(0, 0, -1), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
-	primitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.01f));
-	primitives.push_back(new Plane(vec3(1, 0, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.01f));
+	primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
+	primitives.push_back(new Plane(vec3(-1, 0, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f));
+	primitives.push_back(new Plane(vec3(0, 0, 1), 10, vec3(1.0f, 0.3f, 0.3f), 0.0f, 0.0f));
+	primitives.push_back(new Plane(vec3(0, 0, -1), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
+	primitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f));
+	primitives.push_back(new Plane(vec3(1, 0, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
 
 	//Lights
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, 8, 8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, 8, 8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, -8, 8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, -8, 8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, 8, -8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(8, -8, -8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, 8, -8)));
-	lights.push_back(new PointLight(vec3(3000, 3000, 3000), vec3(-8, -8, -8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, 8, 8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, 8, 8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, -8, 8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, -8, 8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, 8, -8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, -8, -8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, 8, -8)));
+	lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, -8, -8)));
+	//lights.push_back(new PointLight(vec3(10000, 10000, 10000), vec3(0, 0, -8)));
 }
 
 // -----------------------------------------------------------
@@ -53,9 +54,9 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 	{
 		//Non-specular part
 		//Shadow rays
+		vec3 or = intersection.position + intersection.normal * EPSILON;
 		for (auto l : lights)
 		{
-			vec3 or = intersection.position + intersection.normal * EPSILON;
 			vec3 dir = l->position - or ;
 			float maxL = dir.length();
 			Ray r(or , dir * (1.0f / maxL));
@@ -77,14 +78,19 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 		}
 		//Specular part
 		float specularity = intersection.primitive->specularity;
+		float refraction = intersection.primitive->refractionIndex;
 		if (recursionDepth > 0 && specularity > 0.0f) {
-			vec3 or = intersection.position + intersection.normal * EPSILON;
 			vec3 dir = (ray.direction - 2 * dot(ray.direction, intersection.normal) * intersection.normal).normalized();
 
 			Ray r = Ray(or , dir);
 			vec3 reflectiveColor = Trace(r, recursionDepth - 1);
 			color += specularity * reflectiveColor * intersection.primitive->color;
 		}
+		//Refraction part
+		else if (refraction > 0.0f) {
+
+		}
+
 	}
 	else {
 		//TODO: HDR, other no-hit methods?
@@ -110,7 +116,7 @@ void Game::Tick( float deltaTime )
 		//cam->direction.z = sinf(2.0f * PI / 360 * (frame + 180));
 		cam->direction.normalize();
 		cam->ResetBounds();
-		printf("Direction: %f, %f, %f\n", cam->direction.x, cam->direction.y, cam->direction.z);
+		//printf("Direction: %f, %f, %f\n", cam->direction.x, cam->direction.y, cam->direction.z);
 	}
 
 	// clear the graphics window
@@ -130,8 +136,12 @@ void Game::Tick( float deltaTime )
 			vec3 color = Trace(ray, MAX_DEPTH);
 
 			uint max = 255;
-			uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
-			*pointer = temp;
+			uint red = sqrt(min(1.0f, color.x)) * 255.0f;
+			uint green = sqrt(min(1.0f, color.y)) * 255.0f;
+			uint blue = sqrt(min(1.0f, color.z) ) * 255.0f;
+
+			//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
+			*pointer = (red << 16) + (green << 8) + (blue);
 			pointer += 1;
 		}
 	}

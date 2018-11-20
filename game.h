@@ -3,9 +3,10 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 4
+#define MAX_DEPTH 10
 
 #define ONRAILS true
+#define LIGHTINTENSITY 3.0f
 
 namespace Tmpl8
 {
@@ -30,16 +31,16 @@ class Primitive
 {
   public:
 	vec3 color;
-	float specularity;
+	float specularity, refractionIndex = 0.0f;
 	virtual void Intersect( Ray &ray , Intersection &intersection) = 0;
 protected:
-	Primitive(vec3 color, float specularity) : color(color), specularity(specularity) {};
+	Primitive(vec3 color, float specularity, float refractionIndex) : color(color), specularity(specularity), refractionIndex(refractionIndex) {};
 };
 
 class Sphere : public Primitive
 {
   public:
-	  Sphere(vec3 pos, float r, vec3 color, float specularity) : position(pos), r2(r * r), Primitive(color, specularity) {};
+	  Sphere(vec3 pos, float r, vec3 color, float specularity, float refractionIndex) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex) {};
 	void Intersect( Ray &ray, Intersection &intersection) override;
 
   private:
@@ -50,7 +51,7 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	  Plane(vec3 normal, float dist, vec3 color, float specularity) : normal(normal.normalized()), dist(dist), Primitive(color, specularity) {};
+	  Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex) : normal(normal.normalized()), dist(dist), Primitive(color, specularity, refractionIndex) {};
 	void Intersect(Ray &ray, Intersection &intersection) override;
 
   private:
