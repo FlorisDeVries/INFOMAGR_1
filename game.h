@@ -3,7 +3,7 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 4
+#define MAX_DEPTH 6
 #define SCENE 1
 
 #define ONRAILS false

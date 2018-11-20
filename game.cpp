@@ -6,14 +6,14 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera(vec3(0, 0, -20), vec3(0, 0, 1), 1.0f / tanf(PI / 4.0f));
+	cam = new Camera(vec3(0, 0, -8), vec3(0, 0, 1), 1.0f / tanf(PI / 4.0f));
 
 	switch (SCENE) {
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back(new Sphere(vec3(2, 0, 9), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
-		primitives.push_back(new Sphere(vec3(0, 0, 5), 1.5f, vec3(1.f), 0.0f, .0f));
+		primitives.push_back(new Sphere(vec3(1, 2, 7), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
+		primitives.push_back(new Sphere(vec3(0, 0, 5), 2.f, vec3(1.f), 0.0f, 1.54f));
 		primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
 		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.f), 0.8f, 0.0f));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0, 4, 5)));
@@ -109,7 +109,6 @@ vec3 Tmpl8::Game::DirectIllumination(Ray & ray, Intersection & intersection)
 		vec3 direction = l->position - intersection.position;
 		float distance = direction.length();
 		direction = direction * (1.f / distance);
-		// ez check for spheres
 		//if (dot(direction, intersection.normal) < 0) continue;// Works only for spheres
 
 		vec3 origin = intersection.position + direction * EPSILON;
@@ -136,7 +135,31 @@ vec3 Tmpl8::Game::DirectIllumination(Ray & ray, Intersection & intersection)
 
 vec3 Tmpl8::Game::Refract(Ray & ray, Intersection & intersection, int recursionDepth)
 {
-	return vec3(1);
+	if (recursionDepth <= 0)
+		return vec3(0);
+
+	float nfrac = dot(ray.direction, intersection.normal) ? 1 / intersection.primitive->refractionIndex : intersection.primitive->refractionIndex;
+
+	float angle = dot(intersection.normal, -1 * ray.direction);
+
+	float k = 1 - pow(nfrac, 2) * (1 - pow(angle, 2));
+
+	if (k < 0) {
+		return Trace(Reflect(ray, intersection), recursionDepth - 1);
+	}
+	else {
+		vec3 nD = nfrac * ray.direction;
+		vec3 nsomething = intersection.normal * (nfrac * angle - sqrtf(k));
+		vec3 transDir = nD + nsomething;
+		float n1 = 1;
+		float n2 = nfrac;
+		float RO = pow((n1 - n2) / (n1 + n2), 2);
+		float fresnel = RO + (1 - RO) * pow((1 - angle), 5);
+
+		vec3 transRayOrigin = intersection.position + transDir * EPSILON;
+		Ray transRay = Ray(transRayOrigin, transDir);
+		return Trace(transRay, recursionDepth - 1) * fresnel + (1 - fresnel) * Trace(Reflect(ray, intersection), recursionDepth - 1);
+	}
 }
 
 static int frame = 0;
