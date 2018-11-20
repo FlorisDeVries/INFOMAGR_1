@@ -5,8 +5,8 @@
 #define EPSILON 0.001f
 #define MAX_DEPTH 10
 
-#define ONRAILS true
-#define LIGHTINTENSITY 3.0f
+#define ONRAILS false
+#define LIGHTINTENSITY 10.0f
 
 namespace Tmpl8
 {
@@ -32,7 +32,7 @@ class Primitive
   public:
 	vec3 color;
 	float specularity, refractionIndex = 0.0f;
-	virtual void Intersect( Ray &ray , Intersection &intersection) = 0;
+	virtual bool Intersect( Ray &ray , Intersection &intersection) = 0;
 protected:
 	Primitive(vec3 color, float specularity, float refractionIndex) : color(color), specularity(specularity), refractionIndex(refractionIndex) {};
 };
@@ -41,7 +41,7 @@ class Sphere : public Primitive
 {
   public:
 	  Sphere(vec3 pos, float r, vec3 color, float specularity, float refractionIndex) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex) {};
-	void Intersect( Ray &ray, Intersection &intersection) override;
+	bool Intersect( Ray &ray, Intersection &intersection) override;
 
   private:
 	vec3 position;
@@ -52,7 +52,7 @@ class Plane : public Primitive
 {
   public:
 	  Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex) : normal(normal.normalized()), dist(dist), Primitive(color, specularity, refractionIndex) {};
-	void Intersect(Ray &ray, Intersection &intersection) override;
+	bool Intersect(Ray &ray, Intersection &intersection) override;
 
   private:
 	vec3 normal;
@@ -98,6 +98,8 @@ class Game
 	void Init();
 	void Shutdown();
 	vec3 Trace(Ray ray, int recursionDepth);
+	Ray Reflect(Ray &ray, Intersection &intersection);
+	vec3 DirectIllumination(Ray &ray, Intersection &intersection);
 	void Tick( float deltaTime );
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
