@@ -12,10 +12,10 @@ void Game::Init()
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back(new Sphere(vec3(0, 0, 3), 1.f, vec3(1.0f), 1.f, 0.0f));
-		primitives.push_back(new Sphere(vec3(0, -.5f, 1), 2.f, vec3(1.f), 0.0f, 1.54f));
+		primitives.push_back(new Sphere(vec3(0, 1, 1), 2.f, vec3(1.0f), 0.f, 1.5f));
+		primitives.push_back(new Sphere(vec3(0, -3.5f, 1), 2.f, vec3(1.f), 0.0f, 1.54f));
 		//primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
-		primitives.push_back(new Plane(vec3(0, -1, 0), 2, vec3(1.f, .2f, .2f), 1.f, 0.0f));
+		primitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, .2f, .2f), 1.f, 0.0f));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0, 2, -3)));
 		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
 #pragma endregion
