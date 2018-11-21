@@ -6,17 +6,18 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera(vec3(0, 0, -8), vec3(0, 0, 1), 1.0f / tanf(PI / 4.0f));
+	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
-	switch (SCENE) {
+	switch ( SCENE )
+	{
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back(new Sphere(vec3(1, 0, 7), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
-		primitives.push_back(new Sphere(vec3(0, -.5f, 5), 2.f, vec3(1.f, 0, 1.f), 0.0f, 1.54f));
+		primitives.push_back( new Sphere( vec3( 2, 0, 7 ), 1.f, vec3( .0f, 1.0f, 0.0f ), 0.9f, 0.0f ) );
+		primitives.push_back( new Sphere( vec3( 0, -.5f, 5 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
 		//primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
-		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.f), 0.8f, 0.0f));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0, 4, 5)));
+		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 1.f ), 0.8f, 0.0f ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 0, 4, 5 ) ) );
 		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
 #pragma endregion
 		break;
@@ -24,34 +25,32 @@ void Game::Init()
 	case 2:
 #pragma region ComplexScene
 		//Spheres
-		primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.0f, 1.5f));
-		primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.1f, 0.0f));
-		primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.9f, 0.0f));
-		primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(0.3f, 0.3f, 0.3f), 0.1f, 0.0f));
+		primitives.push_back( new Sphere( vec3( 0, 0, 0 ), 2, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 1.5f ) );
+		primitives.push_back( new Sphere( vec3( 5, 0, 0 ), 2, vec3( 0.3f, 0.3f, 1.0f ), 0.1f, 0.0f ) );
+		primitives.push_back( new Sphere( vec3( -5, 4, 2.5f ), 3, vec3( 0.3f, 1.0f, 0.3f ), 0.9f, 0.0f ) );
+		primitives.push_back( new Sphere( vec3( -1, -6.5f, 4 ), 2.5f, vec3( 0.3f, 0.3f, 0.3f ), 0.1f, 0.0f ) );
 
 		//Box
-		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
-		primitives.push_back(new Plane(vec3(-1, 0, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f));
-		primitives.push_back(new Plane(vec3(0, 0, 1), 10, vec3(1.0f, 0.3f, 0.3f), 0.0f, 0.0f));
-		primitives.push_back(new Plane(vec3(0, 0, -1), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
-		primitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f));
-		primitives.push_back(new Plane(vec3(1, 0, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
+		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( -1, 0, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( 0, 0, 1 ), 10, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( 0, 0, -1 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( 0, 1, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( 1, 0, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
 
 		//Lights
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, 8, 8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, 8, 8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, -8, 8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, -8, 8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, 8, -8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(8, -8, -8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, 8, -8)));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY), vec3(-8, -8, -8)));
-		lights.push_back(new PointLight(vec3(10), vec3(0, 0, -8)));
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, 8, 8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, 8, 8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, -8, 8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, -8, 8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, 8, -8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, -8, -8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, 8, -8 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, -8, -8 ) ) );
+		lights.push_back( new PointLight( vec3( 10 ), vec3( 0, 0, -8 ) ) );
 #pragma endregion
 		break;
 	}
-
-
 }
 
 // -----------------------------------------------------------
@@ -61,119 +60,126 @@ void Game::Shutdown()
 {
 }
 
-vec3 Game::Trace(Ray ray, int recursionDepth) {
+vec3 Game::Trace( Ray ray, int recursionDepth )
+{
 	Intersection intersection;
 
-	for (auto p : primitives)
+	for ( auto p : primitives )
 	{
-		p->Intersect(ray, intersection);
+		p->Intersect( ray, intersection );
 	}
 
-	if (intersection.t < std::numeric_limits<float>::max()) { // Found some primitive
+	if ( intersection.t < std::numeric_limits<float>::max() )
+	{ // Found some primitive
 		// Specularity
-		if (intersection.primitive->specularity > 0 && recursionDepth > 0) {
-			Ray reflectRay = Reflect(ray, intersection);
-			vec3 reflectColor = Trace(reflectRay, recursionDepth - 1);
-			vec3 directIlluminationColor = DirectIllumination(ray, intersection);
-			return intersection.primitive->specularity * reflectColor * directIlluminationColor + (1 - intersection.primitive->specularity) * directIlluminationColor;
+		if ( intersection.primitive->specularity > 0 && recursionDepth > 0 )
+		{
+			Ray reflectRay = Reflect( ray, intersection );
+			vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 );
+			vec3 directIlluminationColor = DirectIllumination( ray, intersection );
+			return intersection.primitive->specularity * reflectColor * directIlluminationColor + ( 1 - intersection.primitive->specularity ) * directIlluminationColor;
 		}
 		// Refract
-		else if (intersection.primitive->refractionIndex > 0) {
-			return Refract(ray, intersection, recursionDepth) + DirectIllumination(ray, intersection);
+		else if ( intersection.primitive->refractionIndex > 0 )
+		{
+			return Refract( ray, intersection, recursionDepth );
 		}
 		// DirectIllumination
-		else {
-			return DirectIllumination(ray, intersection);
+		else
+		{
+			return DirectIllumination( ray, intersection );
 		}
-
 	}
-	else { // Missed all primitives
-		return vec3((6.0f * 16 + 4) / 256, (16.0f * 9 + 5) / 256, (16.0f * 14 + 13) / 256); // Cornflower blue
+	else
+	{																								// Missed all primitives
+		return vec3( ( 6.0f * 16 + 4 ) / 256, ( 16.0f * 9 + 5 ) / 256, ( 16.0f * 14 + 13 ) / 256 ); // Cornflower blue
 	}
 }
 
-Ray Tmpl8::Game::Reflect(Ray & ray, Intersection & intersection)
+Ray Tmpl8::Game::Reflect( Ray &ray, Intersection &intersection )
 {
-	vec3 direction = (ray.direction - 2 * dot(ray.direction, intersection.normal) * intersection.normal).normalized();
+	vec3 direction = ( ray.direction - 2 * dot( ray.direction, intersection.normal ) * intersection.normal ).normalized();
 	vec3 origin = intersection.position + intersection.normal * EPSILON;
-	return Ray(origin, direction);
+	return Ray( origin, direction );
 }
 
-vec3 Tmpl8::Game::DirectIllumination(Ray & ray, Intersection & intersection)
+vec3 Tmpl8::Game::DirectIllumination( Ray &ray, Intersection &intersection )
 {
-	vec3 color = vec3(0, 0, 0);
+	vec3 color = vec3( 0, 0, 0 );
 
 	// Shadow rays
-	for (auto l : lights)
+	for ( auto l : lights )
 	{
 		vec3 direction = l->position - intersection.position;
 		float distance = direction.length();
-		direction = direction * (1.f / distance);
+		direction = direction * ( 1.f / distance );
 		//if (dot(direction, intersection.normal) < 0) continue;// Works only for spheres
 
 		vec3 origin = intersection.position + direction * EPSILON;
-		Ray shadowRay = Ray(origin, direction);
+		Ray shadowRay = Ray( origin, direction );
 
 		// Check for obstruction primitives
 		bool obstructed = false;
 		Intersection shadowIntersect;
-		shadowIntersect.t = (l->position - origin).length() - 2 * EPSILON;
-		for (auto p : primitives) {
-			obstructed = p->Intersect(shadowRay, shadowIntersect);
-			if (obstructed)
+		shadowIntersect.t = ( l->position - origin ).length() - 2 * EPSILON;
+		for ( auto p : primitives )
+		{
+			obstructed = p->Intersect( shadowRay, shadowIntersect );
+			if ( obstructed )
 				break;
 		}
 
-		if (obstructed)
+		if ( obstructed )
 			continue;
 
-		color += intersection.primitive->color * l->color * dot(intersection.normal, direction) * (1 / pow(distance, 2));
+		color += intersection.primitive->color * l->color * dot( intersection.normal, direction ) * ( 1 / pow( distance, 2 ) );
 	}
 
-	return color + vec3(.01f);
+	return color + vec3( .01f );
 }
 
-vec3 Tmpl8::Game::Refract(Ray & ray, Intersection & intersection, int recursionDepth)
+vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDepth )
 {
-	if (recursionDepth <= 0)
-		return vec3(0);
+	if ( recursionDepth <= 0 )
+		return vec3( 0 );
 
-	float NdotI = dot(ray.direction, intersection.normal);
-	
-	float n1, n2;
-	if (NdotI < 0) {
-		n1 = 1 / intersection.primitive->refractionIndex;
-		n2 = 1;
+	float NdotI = dot( ray.direction, intersection.normal );
+
+	float n1 = 1, n2 = intersection.primitive->refractionIndex;
+	if ( NdotI < 0 )
+	{
 		NdotI *= -1.f;
 	}
-	else {
-		n1 = 1;
-		n2 = intersection.primitive->refractionIndex;
+	else
+	{
+		std::swap(n1, n2);
 	}
 
-	float cosAngle = cosf(NdotI);
+	float cosAngle = cosf( NdotI );
 
 	float n1n2 = n1 / n2;
 
-	float k = 1 - pow(n1n2, 2) * pow(cosAngle, 2);
+	float k = 1 - pow( n1n2, 2 ) * pow( cosAngle, 2 );
 
-	Ray reflectRay = Reflect(ray, intersection);
+	Ray reflectRay = Reflect( ray, intersection );
 
-	if (k < 0) {
-		Trace(reflectRay, recursionDepth - 1);
+	if ( k < 0 )
+	{
+		Trace( reflectRay, recursionDepth - 1 );
 	}
-	else {
+	else
+	{
 		// Ratio's
-		float RO = pow((n1 - n2) / (n1 + n2), 2);
-		float reflectRatio = RO + (1.f - RO) * pow(1.f - cosAngle, 5);
+		float RO = pow( ( n1 - n2 ) / ( n1 + n2 ), 2 );
+		float reflectRatio = RO + ( 1.f - RO ) * pow( 1.f - cosAngle, 5 );
 
 		// Trans
-		vec3 transDirection = n1n2 * ray.direction + intersection.normal * (n1n2 * cosAngle - sqrtf(k));
+		vec3 transDirection = n1n2 * ray.direction + intersection.normal * ( n1n2 * cosAngle - sqrtf( k ) );
 		vec3 transOrigin = intersection.position + transDirection * EPSILON;
-		vec3 transColor = Trace(Ray(transOrigin, transDirection), recursionDepth - 1) * (1 - reflectRatio);
+		vec3 transColor = Trace( Ray( transOrigin, transDirection ), recursionDepth - 1 ) * ( 1 - reflectRatio );
 
 		// Reflective
-		vec3 reflectColor = Trace(reflectRay, recursionDepth - 1) * reflectRatio;
+		vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 ) * reflectRatio;
 
 		return transColor + reflectColor;
 	}
@@ -184,14 +190,15 @@ static int frame = 0;
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
-void Game::Tick(float deltaTime)
+void Game::Tick( float deltaTime )
 {
 	//printf("Frame: %i\n", frame);
-	if (ONRAILS) {
+	if ( ONRAILS )
+	{
 		//rotate the camera
 		float degrees = 2.0f * PI / 120.0f * frame;
-		cam->direction.x = cosf(degrees);// *cam->direction.x - sinf(degrees) * cam->direction.y;
-		cam->direction.z = sinf(degrees);// *cam->direction.x - cosf(degrees) * cam->direction.y;
+		cam->direction.x = cosf( degrees ); // *cam->direction.x - sinf(degrees) * cam->direction.y;
+		cam->direction.z = sinf( degrees ); // *cam->direction.x - cosf(degrees) * cam->direction.y;
 		//cam->direction.z = sinf(2.0f * PI / 360 * (frame + 180));
 		cam->direction.normalize();
 		cam->ResetBounds();
@@ -199,57 +206,57 @@ void Game::Tick(float deltaTime)
 	}
 
 	// clear the graphics window
-	screen->Clear(0);
+	screen->Clear( 0 );
 	frame++;
 	int xlim = screen->GetWidth(), ylim = screen->GetHeight();
 	Pixel *pointer = screen->GetBuffer();
 
-	for (int y = 0; y < ylim; y++)
+	for ( int y = 0; y < ylim; y++ )
 	{
-		for (int x = 0; x < xlim; x++)
+		for ( int x = 0; x < xlim; x++ )
 		{
-			if (x == 400 && y == 400) {
+			if ( x == 400 && y == 400 )
+			{
 				//printf("middle\n");
 			}
-			Ray ray = cam->GetRay(x, y);
-			vec3 color = Trace(ray, MAX_DEPTH);
+			Ray ray = cam->GetRay( x, y );
+			vec3 color = Trace( ray, MAX_DEPTH );
 
 			uint max = 255;
-			uint red = sqrt(min(1.0f, color.x)) * 255.0f;
-			uint green = sqrt(min(1.0f, color.y)) * 255.0f;
-			uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
+			uint red = sqrt( min( 1.0f, color.x ) ) * 255.0f;
+			uint green = sqrt( min( 1.0f, color.y ) ) * 255.0f;
+			uint blue = sqrt( min( 1.0f, color.z ) ) * 255.0f;
 
 			//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
-			*pointer = (red << 16) + (green << 8) + (blue);
+			*pointer = ( red << 16 ) + ( green << 8 ) + ( blue );
 			pointer += 1;
 		}
 	}
 }
 
-Camera::Camera(vec3 pos, vec3 dir, float FOV) : position(pos), direction(dir), FOV(FOV), screenWidth(screenWidth), screenHeight(screenHeight)
+Camera::Camera( vec3 pos, vec3 dir, float FOV ) : position( pos ), direction( dir ), FOV( FOV ), screenWidth( screenWidth ), screenHeight( screenHeight )
 {
 	screenCenter = pos + dir * FOV;
-	screenTopLeft = ScreenCorner(0);
-	xinc = (ScreenCorner(1) - ScreenCorner(0)) * (1.0f / SCRWIDTH);
-	yinc = (ScreenCorner(2) - ScreenCorner(0)) * (1.0f / SCRHEIGHT);
-
+	screenTopLeft = ScreenCorner( 0 );
+	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH );
+	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT );
 }
 
-Ray Tmpl8::Camera::GetRay(int x, int y)
+Ray Tmpl8::Camera::GetRay( int x, int y )
 {
-	vec3 rayDirection = ((screenTopLeft + x * xinc + y * yinc) - position).normalized();
+	vec3 rayDirection = ( ( screenTopLeft + x * xinc + y * yinc ) - position ).normalized();
 
-	Ray r = Ray(position, rayDirection);
+	Ray r = Ray( position, rayDirection );
 
 	return r;
 }
 
-vec3 Tmpl8::Camera::ScreenCorner(int corner)
+vec3 Tmpl8::Camera::ScreenCorner( int corner )
 {
-	vec3 left = cross(direction, vec3(0, 1, 0)).normalized();
-	vec3 up = cross(left, direction).normalized();
+	vec3 left = cross( direction, vec3( 0, 1, 0 ) ).normalized();
+	vec3 up = cross( left, direction ).normalized();
 
-	switch (corner)
+	switch ( corner )
 	{
 	case 0:
 		return screenCenter + left + up;
@@ -259,30 +266,31 @@ vec3 Tmpl8::Camera::ScreenCorner(int corner)
 		return screenCenter + left - up;
 	case 3:
 		return screenCenter - left - up;
-
 	}
 	return vec3();
 }
 
-void Tmpl8::Camera::ResetBounds() {
+void Tmpl8::Camera::ResetBounds()
+{
 	screenCenter = position + direction * FOV;
-	screenTopLeft = ScreenCorner(0);
-	xinc = (ScreenCorner(1) - ScreenCorner(0)) * (1.0f / SCRWIDTH);
-	yinc = (ScreenCorner(2) - ScreenCorner(0)) * (1.0f / SCRHEIGHT);
+	screenTopLeft = ScreenCorner( 0 );
+	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH );
+	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT );
 }
 
-bool Tmpl8::Sphere::Intersect(Ray &ray, Intersection &intersection)
+bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
 {
 	vec3 C = position - ray.origin;
-	float t = dot(C, ray.direction);
+	float t = dot( C, ray.direction );
 	vec3 Q = C - t * ray.direction;
-	float p2 = dot(Q, Q);
-	if (p2 > r2) return false; // r2 = r * r
-	t -= sqrt((r2 - p2));
-	if ((t < intersection.t) && (t > 0)) {
+	float p2 = dot( Q, Q );
+	if ( p2 > r2 ) return false; // r2 = r * r
+	t -= sqrt( ( r2 - p2 ) );
+	if ( ( t < intersection.t ) && ( t > 0 ) )
+	{
 		intersection.primitive = this;
 		intersection.position = ray.origin + ray.direction * t;
-		intersection.normal = (intersection.position - position).normalized();
+		intersection.normal = ( intersection.position - position ).normalized();
 		intersection.t = t;
 		return true;
 	}
@@ -290,13 +298,15 @@ bool Tmpl8::Sphere::Intersect(Ray &ray, Intersection &intersection)
 }
 
 //Taken from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
-bool Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
+bool Tmpl8::Plane::Intersect( Ray &ray, Intersection &intersection )
 {
-	float denom = dot(ray.direction, normal);
-	if (denom > EPSILON) {
+	float denom = dot( ray.direction, normal );
+	if ( denom > EPSILON )
+	{
 		vec3 p0l0 = normal * dist - ray.origin;
-		float t = dot(normal, p0l0) / denom;
-		if (t >= 0 && t < intersection.t) {
+		float t = dot( normal, p0l0 ) / denom;
+		if ( t >= 0 && t < intersection.t )
+		{
 			intersection.primitive = this;
 			intersection.position = ray.origin + ray.direction * t;
 			intersection.normal = -1.0f * normal;
