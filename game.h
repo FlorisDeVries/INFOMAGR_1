@@ -4,7 +4,7 @@
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 10
-#define SCENE 2
+#define SCENE 1
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
@@ -34,6 +34,7 @@ class Primitive
 	vec3 color;
 	float specularity, refractionIndex = 0.0f;
 	virtual bool Intersect( Ray &ray , Intersection &intersection) = 0;
+	virtual vec3 GetColor(vec3 pos) = 0;
 protected:
 	Primitive(vec3 color, float specularity, float refractionIndex) : color(color), specularity(specularity), refractionIndex(refractionIndex) {};
 };
@@ -43,7 +44,7 @@ class Sphere : public Primitive
   public:
 	  Sphere(vec3 pos, float r, vec3 color, float specularity, float refractionIndex) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex) {};
 	bool Intersect( Ray &ray, Intersection &intersection) override;
-
+	vec3 GetColor(vec3 pos) override;
   private:
 	vec3 position;
 	float r2;
@@ -54,6 +55,7 @@ class Plane : public Primitive
   public:
 	  Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex) : normal(normal.normalized()), dist(dist), Primitive(color, specularity, refractionIndex) {};
 	bool Intersect(Ray &ray, Intersection &intersection) override;
+	vec3 GetColor(vec3 pos) override;
 
   private:
 	vec3 normal;

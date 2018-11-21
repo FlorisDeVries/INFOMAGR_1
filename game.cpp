@@ -12,11 +12,11 @@ void Game::Init()
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back(new Sphere(vec3(1, 0, 7), 1.f, vec3(.0f, 1.0f, 0.0f), 0.9f, 0.0f));
-		primitives.push_back(new Sphere(vec3(0, -.5f, 5), 2.f, vec3(1.f, 0, 1.f), 0.0f, 1.54f));
+		primitives.push_back(new Sphere(vec3(1, 2, 3), 1.f, vec3(1.0f), 1.f, 0.0f));
+		primitives.push_back(new Sphere(vec3(0, -.5f, 1), 2.f, vec3(1.f), 0.0f, 1.54f));
 		//primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
-		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(1.f), 0.8f, 0.0f));
-		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0, 4, 5)));
+		primitives.push_back(new Plane(vec3(0, -1, 0), 2, vec3(1.f, .2f, .2f), 1.f, 0.0f));
+		lights.push_back(new PointLight(vec3(LIGHTINTENSITY ), vec3(0, 2, -3)));
 		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
 #pragma endregion
 		break;
@@ -79,7 +79,7 @@ vec3 Game::Trace(Ray ray, int recursionDepth) {
 		}
 		// Refract
 		else if (intersection.primitive->refractionIndex > 0) {
-			return Refract(ray, intersection, recursionDepth) + DirectIllumination(ray, intersection);
+			return Refract(ray, intersection, recursionDepth);
 		}
 		// DirectIllumination
 		else {
@@ -127,7 +127,7 @@ vec3 Tmpl8::Game::DirectIllumination(Ray & ray, Intersection & intersection)
 		if (obstructed)
 			continue;
 
-		color += intersection.primitive->color * l->color * dot(intersection.normal, direction) * (1 / pow(distance, 2));
+		color += intersection.primitive->GetColor(intersection.position) * l->color * dot(intersection.normal, direction) * (1 / pow(distance, 2));
 	}
 
 	return color + vec3(.01f);
@@ -142,7 +142,7 @@ vec3 Tmpl8::Game::Refract(Ray & ray, Intersection & intersection, int recursionD
 	
 	float n1, n2;
 	if (NdotI < 0) {
-		n1 = 1 / intersection.primitive->refractionIndex;
+		n1 = intersection.primitive->refractionIndex;
 		n2 = 1;
 		NdotI *= -1.f;
 	}
@@ -289,6 +289,11 @@ bool Tmpl8::Sphere::Intersect(Ray &ray, Intersection &intersection)
 	return false;
 }
 
+vec3 Tmpl8::Sphere::GetColor(vec3 pos)
+{
+	return color;
+}
+
 //Taken from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
 bool Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 {
@@ -305,4 +310,10 @@ bool Tmpl8::Plane::Intersect(Ray & ray, Intersection &intersection)
 		}
 	}
 	return false;
+}
+
+vec3 Tmpl8::Plane::GetColor(vec3 pos)
+{
+	pos += 2000;
+	return (abs((int)pos.x - 100) % 2 > 0 ^ abs((int)pos.z - 100) % 2 > 0 ^ abs((int)pos.y - 100) % 2 > 0) ? color : vec3(0);
 }
