@@ -8,6 +8,9 @@ void Game::Init()
 	//Setting up the scene
 	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
+	Surface *planeTexture = new Surface( "assets/nc2tiles.png" );
+
+	//Pixel *buffer = planeTexture->GetBuffer();
 	switch ( SCENE )
 	{
 	case 1:
@@ -17,7 +20,8 @@ void Game::Init()
 		primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
 		primitives.push_back( new Sphere( vec3( 2, 0, 3 ), 2.f, vec3( 1.f ), .9f, 0.0f ) );
 		//primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
-		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
+		primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
 		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
@@ -53,7 +57,7 @@ void Game::Init()
 #pragma endregion
 		break;
 	case 3:
-		primitives.push_back( new Sphere( vec3( -9, -1.f, 1 ), 4.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3(.5f, 2.3f,2.3f) ) );
+		primitives.push_back( new Sphere( vec3( -9, -1.f, 1 ), 4.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
 		primitives.push_back( new Sphere( vec3( -3, -3.f, 1 ), 2.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
 		primitives.push_back( new Sphere( vec3( 0, -4.f, 1 ), 1.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
 		primitives.push_back( new Sphere( vec3( 2, -4.5f, 1 ), .5f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
@@ -194,17 +198,17 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 	vec3 refractColor = 0;
 	if ( refractRatio < 1 )
 	{
-		vec3 direction = (k < 0 ? 0 : n1n2 * ray.direction + ( n1n2 * cosI - sqrtf( k ) ) * n).normalized();
+		vec3 direction = ( k < 0 ? 0 : n1n2 * ray.direction + ( n1n2 * cosI - sqrtf( k ) ) * n ).normalized();
 		vec3 origin = intersection.position + ( direction * EPSILON );
 		Intersection refractIntersect;
 		refractColor = Trace( Ray( origin, direction ), recursionDepth - 1, refractIntersect );
 
 		if ( refractIntersect.inside && refractIntersect.t < std::numeric_limits<float>::max() )
 		{
-			vec3 color = refractIntersect.primitive->GetColor(refractIntersect.position);
+			vec3 color = refractIntersect.primitive->GetColor( refractIntersect.position );
 			float r = exp( intersection.primitive->absorptionColor.x * -refractIntersect.t ), g = exp( intersection.primitive->absorptionColor.y * -refractIntersect.t ), b = exp( intersection.primitive->absorptionColor.z * -refractIntersect.t ); // Add rate
 			//float beersLaw = exp( 10e-6 * -refractIntersect.t );
-			refractColor *= vec3(r, g, b);
+			refractColor *= vec3( r, g, b );
 		}
 	}
 
@@ -315,7 +319,7 @@ bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
 	vec3 oc = position - ray.origin;
 	float a = dot( ray.direction, ray.direction );
 	float b = dot( ray.direction, oc );
-	float c = dot( oc, oc ) - b*b;
+	float c = dot( oc, oc ) - b * b;
 	if ( c > r2 )
 		return false;
 	float disc = sqrt( r2 - c );
@@ -330,7 +334,7 @@ bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
 		//printf( "Binnen \n" );
 		t = t2;
 	}
-	
+
 	if ( t < 0 )
 		t = t2;
 	//else
@@ -374,6 +378,31 @@ bool Tmpl8::Plane::Intersect( Ray &ray, Intersection &intersection )
 
 vec3 Tmpl8::Plane::GetColor( vec3 pos )
 {
-	pos += 2000;
-	return ( abs( (int)pos.x - 100 ) % 2 > 0 ^ abs( (int)pos.z - 100 ) % 2 > 0 ^ abs( (int)pos.y - 100 ) % 2 > 0 ) ? color : 1;
+	if ( !texture )
+	{
+		pos += 2000;
+		return ( abs( (int)pos.x - 100 ) % 2 > 0 ^ abs( (int)pos.z - 100 ) % 2 > 0 ^ abs( (int)pos.y - 100 ) % 2 > 0 ) ? color : 1;
+	}
+	else
+	{
+		Pixel *buffer = texture->GetBuffer();
+		int h = texture->GetHeight();
+		int w = texture->GetWidth();
+		int x = abs( (int)( pos.x * 100 ) % w );
+		int y = abs( (int)( pos.y * 100 ) % h );
+		//printf( "Size: %i, %i \n", w, h );
+		//printf( "Loc: %i, %i \n", x, y );
+		//printf( "Pixel: %i \n", x + y * w );
+		Pixel pixel = buffer[x + y * w];
+
+		const unsigned int r = ( pixel & REDMASK );
+		const unsigned int g = ( pixel & GREENMASK );
+		const unsigned int b = ( pixel & BLUEMASK );
+
+		printf("R, G, B; %f, %f, %f\n", r, g, b);
+		
+		vec3 color = buffer[x + y * w];
+
+		return color;
+	}
 }

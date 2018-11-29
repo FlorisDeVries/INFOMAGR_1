@@ -1,10 +1,10 @@
 #pragma once
-#include <vector>
 #include <limits>
+#include <vector>
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 10
-#define SCENE 3
+#define SCENE 1
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
@@ -14,7 +14,7 @@ namespace Tmpl8
 class Ray
 {
   public:
-	  Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {};
+	Ray( vec3 origin, vec3 direction ) : origin( origin ), direction( direction ){};
 	vec3 origin, direction;
 };
 
@@ -22,10 +22,10 @@ class Primitive;
 
 class Intersection
 {
-public:
+  public:
 	vec3 position, normal;
 	float t = std::numeric_limits<float>::max();
-	Primitive* primitive;
+	Primitive *primitive;
 	bool inside = false;
 };
 
@@ -34,18 +34,21 @@ class Primitive
   public:
 	vec3 color, absorptionColor;
 	float specularity, refractionIndex = 0.0f;
-	virtual bool Intersect( Ray &ray , Intersection &intersection) = 0;
-	virtual vec3 GetColor(vec3 pos) = 0;
-protected:
-	Primitive(vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1) : color(color), specularity(specularity), refractionIndex(refractionIndex), absorptionColor(absorptionColor) {};
+	virtual bool Intersect( Ray &ray, Intersection &intersection ) = 0;
+	virtual vec3 GetColor( vec3 pos ) = 0;
+
+  protected:
+	Surface* texture;
+	Primitive( vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface *texture = 0) : color( color ), specularity( specularity ), refractionIndex( refractionIndex ), absorptionColor( absorptionColor ), texture(texture){};
 };
 
 class Sphere : public Primitive
 {
   public:
-	  Sphere(vec3 pos, float r, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex, absorptionColor) {};
-	bool Intersect( Ray &ray, Intersection &intersection) override;
-	vec3 GetColor(vec3 pos) override;
+	Sphere( vec3 pos, float r, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface* texture = 0 ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
+	bool Intersect( Ray &ray, Intersection &intersection ) override;
+	vec3 GetColor( vec3 pos ) override;
+
   private:
 	vec3 position;
 	float r2;
@@ -54,9 +57,9 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor ){};
-	bool Intersect(Ray &ray, Intersection &intersection) override;
-	vec3 GetColor(vec3 pos) override;
+	Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface* texture = 0 ) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
+	bool Intersect( Ray &ray, Intersection &intersection ) override;
+	vec3 GetColor( vec3 pos ) override;
 
   private:
 	vec3 normal;
@@ -67,7 +70,7 @@ class Camera
 {
   public:
 	Camera( vec3 pos, vec3 dir, float FOV );
-	Ray GetRay(int x, int y);
+	Ray GetRay( int x, int y );
 	vec3 position, direction, screenTopLeft;
 	float FOV;
 	int screenWidth, screenHeight;
@@ -75,14 +78,14 @@ class Camera
 
   private:
 	vec3 screenCenter;
-	vec3 ScreenCorner(int corner = 0);
+	vec3 ScreenCorner( int corner = 0 );
 	vec3 xinc, yinc;
 };
 
 class Light
 {
   public:
-	  Light(vec3 col, vec3 pos) : color(col), position(pos) {};
+	Light( vec3 col, vec3 pos ) : color( col ), position( pos ){};
 	vec3 position;
 	vec3 color;
 	virtual bool InLoS() = 0;
@@ -91,7 +94,7 @@ class Light
 class PointLight : public Light
 {
   public:
-	  PointLight(vec3 col, vec3 pos) : Light(col, pos) {};
+	PointLight( vec3 col, vec3 pos ) : Light( col, pos ){};
 	inline bool InLoS() override { return true; }
 };
 
@@ -101,10 +104,10 @@ class Game
 	void SetTarget( Surface *surface ) { screen = surface; }
 	void Init();
 	void Shutdown();
-	vec3 Trace(Ray ray, int recursionDepth, Intersection& intersection = Intersection());
-	Ray Reflect(Ray &ray, Intersection &intersection);
-	vec3 DirectIllumination(Ray &ray, Intersection &intersection);
-	vec3 Refract(Ray &ray, Intersection &intersection, int recursionDepth);
+	vec3 Trace( Ray ray, int recursionDepth, Intersection &intersection = Intersection() );
+	Ray Reflect( Ray &ray, Intersection &intersection );
+	vec3 DirectIllumination( Ray &ray, Intersection &intersection );
+	vec3 Refract( Ray &ray, Intersection &intersection, int recursionDepth );
 	void Tick( float deltaTime );
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
@@ -124,7 +127,7 @@ class Game
 
 	std::vector<Primitive *> primitives;
 	std::vector<Light *> lights;
-	Camera* cam;
+	Camera *cam;
 
   private:
 	Surface *screen;
