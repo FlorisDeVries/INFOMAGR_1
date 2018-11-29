@@ -9,7 +9,8 @@ void Game::Init()
 	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
 	Surface *planeTexture = new Surface("assets/Textures/PlaneTexture.jpg");
-	Surface *earth = new Surface( "assets/Textures/earth.jpg" );
+	Surface *earth = new Surface("assets/Textures/earth.jpg");
+	Surface *eye = new Surface( "assets/Textures/oog.jpg" );
 
 	switch ( SCENE )
 	{
@@ -33,8 +34,8 @@ void Game::Init()
 		//Spheres
 		primitives.push_back( new Sphere( vec3( 0, 0, 0 ), 2, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 1.5f, vec3(.5f, 2.3f, 2.3f)) );
 		primitives.push_back( new Sphere( vec3( 5, 0, 0 ), 2, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f, 1, earth) );
-		primitives.push_back( new Sphere( vec3( -5, 4, 2.5f ), 3, vec3( 0.3f, 1.0f, 0.3f ), 0.9f, 0.0f ) );
-		primitives.push_back( new Sphere( vec3( -1, -6.5f, 4 ), 2.5f, vec3( 0.3f, 0.3f, 0.3f ), 0.1f, 0.0f ) );
+		primitives.push_back( new Sphere( vec3( -5, 4, 2.5f ), 3, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f, 1, eye ) );
+		primitives.push_back( new Sphere( vec3( -1, -6.5f, 4 ), 2.5f, vec3( 0.3f, 0.3f, 0.3f ), 0.0f, 0.0f, 1, eye) );
 
 		//Box
 		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
@@ -353,15 +354,25 @@ vec3 Tmpl8::Sphere::GetColor( vec3 pos )
 	}
 	else {
 
-		vec3 n = (pos - position).normalized();
-		float u = atan2(n.x, n.z) / (2 * PI) + 500;
-		float v = n.y * -0.5 + 0.5;
+		// http://www.cs.unc.edu/~rademach/xroads-RT/RTarticle.html
+		vec3 Vn = vec3(0, 1, 0); // Vector towards the northpole
+		vec3 Ve = vec3(0, 0, -1).normalized(); // Vector towards the equator, use this to rotate spheres
+		vec3 Vp = (position - pos).normalized(); // Vector towards the intersection point
 
-		float scale = 100;
+		float phi = acosf(-dot(Vn, Vp));
+		float v = phi / PI; // Value between 0 and 1
+
+		float theta = (acosf(dot(Vp, Ve) / sin(phi))) / (2 * PI);
+		float u;
+		if (dot(cross(Vn, Ve), Vp) < 0)
+			u = theta; // Also between 0 and 1
+		else
+			u = 1 - theta;
+
 		int h = texture->GetHeight();
 		int w = texture->GetWidth();
-		int x = abs((int)(u * w) % w);
-		int y = abs((int)(v * h) % h);
+		int x = u * w;
+		int y = v * h;
 
 		// Retrieve the pixel and transform it into a vec3 color
 		Pixel pixel = texture->GetBuffer()[x + y * w];
