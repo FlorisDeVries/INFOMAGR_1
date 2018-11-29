@@ -3,8 +3,10 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 10
+#define MAX_DEPTH 1
 #define SCENE 3
+#define MOVEMENTRATE 1.0f
+#define SENSITIVITY 0.003f
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
@@ -72,8 +74,10 @@ class Camera
 	float FOV;
 	int screenWidth, screenHeight;
 	void ResetBounds();
+	void ResetFOV();
 
   private:
+	float FOV_Distance;
 	vec3 screenCenter;
 	vec3 ScreenCorner(int corner = 0);
 	vec3 xinc, yinc;
@@ -98,6 +102,12 @@ class PointLight : public Light
 class Game
 {
   public:
+
+	  std::vector<Primitive *> primitives;
+	  std::vector<Light *> lights;
+	  Camera* cam;
+	  bool mouseTurning;
+
 	void SetTarget( Surface *surface ) { screen = surface; }
 	void Init();
 	void Shutdown();
@@ -108,23 +118,51 @@ class Game
 	void Tick( float deltaTime );
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
+		if (button == SDL_BUTTON_RIGHT)
+			mouseTurning = false;
 	}
 	void MouseDown( int button )
 	{ /* implement if you want to detect mouse button presses */
+		if (button == SDL_BUTTON_RIGHT)
+			mouseTurning = true;
 	}
 	void MouseMove( int x, int y )
 	{ /* implement if you want to detect mouse movement */
+		if (mouseTurning) {
+			//printf("Turning camera\n");
+			vec3 left = cross(cam->direction, vec3(0, 1, 0)).normalized();
+			vec3 up = cross(cam->direction, left).normalized();
+			int xdif = -x;
+			int ydif = -y;
+
+			vec3 target = cam->position + cam->direction;
+			target += left * xdif * SENSITIVITY + up * -ydif * SENSITIVITY;
+			cam->direction = (target - cam->position).normalized();
+			cam->ResetBounds();
+		}
 	}
 	void KeyUp( int key )
 	{ /* implement if you want to handle keys */
 	}
 	void KeyDown( int key )
-	{ /* implement if you want to handle keys */
-	}
+	{ 
+		vec3 left = cross(cam->direction, vec3(0, 1, 0)).normalized();
+		vec3 up = cross(cam->direction, left).normalized();
+			//Forward, left, backward, right, up, down
+		
+		if(key == SDL_SCANCODE_W) cam->position += cam->direction * MOVEMENTRATE;
+		if(key == SDL_SCANCODE_A) cam->position += left * MOVEMENTRATE;
+		if(key == SDL_SCANCODE_S) cam->position += -cam->direction * MOVEMENTRATE;
+		if(key == SDL_SCANCODE_D) cam->position += -left * MOVEMENTRATE;
+		if(key == SDL_SCANCODE_R) cam->position += up * MOVEMENTRATE;
+		if(key == SDL_SCANCODE_F) cam->position += -up * MOVEMENTRATE;
+			// Increase/decrease FOV
+		if (key == SDL_SCANCODE_Y && cam->FOV > 2.2f) cam->FOV -= 0.1f;
+		if (key == SDL_SCANCODE_H) cam->FOV += 0.1f;
 
-	std::vector<Primitive *> primitives;
-	std::vector<Light *> lights;
-	Camera* cam;
+		cam->ResetBounds();
+		cam->ResetFOV();
+	}
 
   private:
 	Surface *screen;

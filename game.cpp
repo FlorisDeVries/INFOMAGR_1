@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
+	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 4.0f );
 
 	switch ( SCENE )
 	{
@@ -268,10 +268,8 @@ void Game::Tick( float deltaTime )
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV ) : position( pos ), direction( dir ), FOV( FOV ), screenWidth( screenWidth ), screenHeight( screenHeight )
 {
-	screenCenter = pos + dir * FOV;
-	screenTopLeft = ScreenCorner( 0 );
-	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH );
-	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT );
+	ResetBounds();
+	ResetFOV();
 }
 
 Ray Tmpl8::Camera::GetRay( int x, int y )
@@ -304,10 +302,14 @@ vec3 Tmpl8::Camera::ScreenCorner( int corner )
 
 void Tmpl8::Camera::ResetBounds()
 {
-	screenCenter = position + direction * FOV;
+	screenCenter = position + direction * FOV_Distance;
 	screenTopLeft = ScreenCorner( 0 );
 	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH );
 	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT );
+}
+
+void Tmpl8::Camera::ResetFOV() {
+	FOV_Distance = 1.0f / tanf(PI / FOV);
 }
 
 bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
