@@ -4,7 +4,7 @@
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 10
-#define SCENE 1
+#define SCENE 2
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
@@ -57,12 +57,12 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface* texture = 0 ) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
+	  Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface* texture = 0);
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 
   private:
-	vec3 normal;
+	vec3 normal, UAxis, VAxis;
 	float dist;
 };
 

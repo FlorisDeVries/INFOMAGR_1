@@ -6,22 +6,22 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
+	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
-	Surface *planeTexture = new Surface( "assets/nc2tiles.png" );
+	Surface *planeTexture = new Surface("assets/Textures/PlaneTexture.jpg");
+	Surface *earth = new Surface( "assets/Textures/earth.jpg" );
 
-	//Pixel *buffer = planeTexture->GetBuffer();
 	switch ( SCENE )
 	{
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back( new Sphere( vec3( 0, 1, 1 ), 2.f, vec3( 1.0f ), 0.f, 1.5f ) );
-		primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
+		//primitives.push_back( new Sphere( vec3( 0, 1, 1 ), 2.f, vec3( 1.0f ), 0.f, 1.5f ) );
+		//primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
 		primitives.push_back( new Sphere( vec3( 2, 0, 3 ), 2.f, vec3( 1.f ), .9f, 0.0f ) );
 		//primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
 		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
-		primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
 		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
@@ -31,14 +31,14 @@ void Game::Init()
 	case 2:
 #pragma region ComplexScene
 		//Spheres
-		primitives.push_back( new Sphere( vec3( 0, 0, 0 ), 2, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 1.5f ) );
-		primitives.push_back( new Sphere( vec3( 5, 0, 0 ), 2, vec3( 0.3f, 0.3f, 1.0f ), 0.1f, 0.0f ) );
+		primitives.push_back( new Sphere( vec3( 0, 0, 0 ), 2, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 1.5f, vec3(.5f, 2.3f, 2.3f)) );
+		primitives.push_back( new Sphere( vec3( 5, 0, 0 ), 2, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f, 1, earth) );
 		primitives.push_back( new Sphere( vec3( -5, 4, 2.5f ), 3, vec3( 0.3f, 1.0f, 0.3f ), 0.9f, 0.0f ) );
 		primitives.push_back( new Sphere( vec3( -1, -6.5f, 4 ), 2.5f, vec3( 0.3f, 0.3f, 0.3f ), 0.1f, 0.0f ) );
 
 		//Box
 		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
-		primitives.push_back( new Plane( vec3( -1, 0, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( -1, 0, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f, 1, planeTexture) );
 		primitives.push_back( new Plane( vec3( 0, 0, 1 ), 10, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 0.0f ) );
 		primitives.push_back( new Plane( vec3( 0, 0, -1 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
 		primitives.push_back( new Plane( vec3( 0, 1, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
@@ -325,20 +325,15 @@ bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
 	float disc = sqrt( r2 - c );
 	float t = b - disc;
 	float t2 = b + disc;
-	// float t1 = ( -1.0f * b + disc ) / ( 2.0f * a );
-	// float t2 = ( -1.0f * b - disc ) / ( 2.0f * a );
-	// if ( t1 < 0 && t2 < 0 ) return false;
 	bool inside = t < 0;
 	if ( inside )
 	{
-		//printf( "Binnen \n" );
 		t = t2;
 	}
 
 	if ( t < 0 )
 		t = t2;
-	//else
-	//	t = min( t1, t2 );
+
 	if ( ( t < intersection.t ) && ( t > 0 ) )
 	{
 		intersection.primitive = this;
@@ -353,7 +348,39 @@ bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
 
 vec3 Tmpl8::Sphere::GetColor( vec3 pos )
 {
-	return color;
+	if (!texture) {
+		return color;
+	}
+	else {
+
+		vec3 n = (pos - position).normalized();
+		float u = atan2(n.x, n.z) / (2 * PI) + 500;
+		float v = n.y * -0.5 + 0.5;
+
+		float scale = 100;
+		int h = texture->GetHeight();
+		int w = texture->GetWidth();
+		int x = abs((int)(u * w) % w);
+		int y = abs((int)(v * h) % h);
+
+		// Retrieve the pixel and transform it into a vec3 color
+		Pixel pixel = texture->GetBuffer()[x + y * w];
+		BYTE r = (pixel & REDMASK) >> 16;
+		BYTE g = (pixel & GREENMASK) >> 8;
+		BYTE b = (pixel & BLUEMASK);
+		vec3 color = vec3(r / 255.f, g / 255.f, b / 255.f);
+
+		return color;
+	}
+}
+
+
+
+
+Tmpl8::Plane::Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor, Surface * texture) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor, texture )
+{
+	UAxis = vec3(normal.y, normal.z, -normal.x);
+	VAxis = UAxis.cross(normal);
 }
 
 //Taken from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
@@ -385,23 +412,19 @@ vec3 Tmpl8::Plane::GetColor( vec3 pos )
 	}
 	else
 	{
-		Pixel *buffer = texture->GetBuffer();
+		// Calculate u and v
 		int h = texture->GetHeight();
 		int w = texture->GetWidth();
-		int x = abs( (int)( pos.x * 100 ) % w );
-		int y = abs( (int)( pos.y * 100 ) % h );
-		//printf( "Size: %i, %i \n", w, h );
-		//printf( "Loc: %i, %i \n", x, y );
-		//printf( "Pixel: %i \n", x + y * w );
-		Pixel pixel = buffer[x + y * w];
 
-		const unsigned int r = ( pixel & REDMASK );
-		const unsigned int g = ( pixel & GREENMASK );
-		const unsigned int b = ( pixel & BLUEMASK );
+		int x = abs( (int)(dot(pos, UAxis) * w) % w );
+		int y = abs( (int)(dot(pos, VAxis) * h) % h );
 
-		printf("R, G, B; %f, %f, %f\n", r, g, b);
-		
-		vec3 color = buffer[x + y * w];
+		// Retrieve the pixel and transform it into a vec3 color
+		Pixel pixel = texture->GetBuffer()[x + y * w];
+		BYTE r = ( pixel & REDMASK ) >> 16;
+		BYTE g = ( pixel & GREENMASK ) >> 8;
+		BYTE b = ( pixel & BLUEMASK );		
+		vec3 color = vec3(r / 255.f, g / 255.f, b / 255.f);
 
 		return color;
 	}
