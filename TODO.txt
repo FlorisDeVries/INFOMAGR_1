@@ -1,0 +1,17 @@
+Materials
+controls+movement
+=========
+7
+
+triangles + obj loader[1]
+Extra lights(directional + IES)[1]
+Multithreading[.5]
+
+complex | optimized renderer [.5]
+
+
+
+
+
+Done Extras:
+5. dielectric[1]
