@@ -26,23 +26,24 @@ public:
 	vec3 position, normal;
 	float t = std::numeric_limits<float>::max();
 	Primitive* primitive;
+	bool inside = false;
 };
 
 class Primitive
 {
   public:
-	vec3 color;
+	vec3 color, absorptionColor;
 	float specularity, refractionIndex = 0.0f;
 	virtual bool Intersect( Ray &ray , Intersection &intersection) = 0;
 	virtual vec3 GetColor(vec3 pos) = 0;
 protected:
-	Primitive(vec3 color, float specularity, float refractionIndex) : color(color), specularity(specularity), refractionIndex(refractionIndex) {};
+	Primitive(vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1) : color(color), specularity(specularity), refractionIndex(refractionIndex), absorptionColor(absorptionColor) {};
 };
 
 class Sphere : public Primitive
 {
   public:
-	  Sphere(vec3 pos, float r, vec3 color, float specularity, float refractionIndex) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex) {};
+	  Sphere(vec3 pos, float r, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex, absorptionColor) {};
 	bool Intersect( Ray &ray, Intersection &intersection) override;
 	vec3 GetColor(vec3 pos) override;
   private:
@@ -53,7 +54,7 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	  Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex) : normal(normal.normalized()), dist(dist), Primitive(color, specularity, refractionIndex) {};
+	Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor ){};
 	bool Intersect(Ray &ray, Intersection &intersection) override;
 	vec3 GetColor(vec3 pos) override;
 

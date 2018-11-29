@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3( -6, -3, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
+	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
 
 	switch ( SCENE )
 	{
@@ -53,15 +53,15 @@ void Game::Init()
 #pragma endregion
 		break;
 	case 3:
-		primitives.push_back( new Sphere( vec3( -9, -1.f, 1 ), 4.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f ) );
-		primitives.push_back( new Sphere( vec3( -3, -3.f, 1 ), 2.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f ) );
-		primitives.push_back( new Sphere( vec3( 0, -4.f, 1 ), 1.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f ) );
-		primitives.push_back( new Sphere( vec3( 2, -4.5f, 1 ), .5f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f ) );
+		primitives.push_back( new Sphere( vec3( -9, -1.f, 1 ), 4.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3(.5f, 2.3f,2.3f) ) );
+		primitives.push_back( new Sphere( vec3( -3, -3.f, 1 ), 2.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
+		primitives.push_back( new Sphere( vec3( 0, -4.f, 1 ), 1.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
+		primitives.push_back( new Sphere( vec3( 2, -4.5f, 1 ), .5f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
 
-		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 0), .0f, 0.0f ) );
+		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 0 ), .0f, 0.0f ) );
 
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
 		break;
 	}
 }
@@ -73,32 +73,26 @@ void Game::Shutdown()
 {
 }
 
-vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection2 )
+vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
 {
-	Intersection intersection;
-
-	
-
-
 	for ( auto p : primitives )
 	{
 		p->Intersect( ray, intersection );
 	}
-	intersection2.t = intersection.t;
 	if ( intersection.t < std::numeric_limits<float>::max() )
 	{ // Found some primitive
 		// Specularity
 		if ( intersection.primitive->specularity > 0 && recursionDepth > 0 )
 		{
 			Ray reflectRay = Reflect( ray, intersection );
-			vec3 reflectColor = Trace( reflectRay, recursionDepth - 1);
+			vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 );
 			vec3 directIllumination = DirectIllumination( ray, intersection );
-			return intersection.primitive->GetColor( intersection.position ) * ( intersection.primitive->specularity * reflectColor + ( 1 - intersection.primitive->specularity ) * directIllumination ); //intersection.primitive->GetColor(intersection.position)
+			return reflectColor;
 		}
 		// Refract
 		else if ( intersection.primitive->refractionIndex > 0 && recursionDepth > 0 )
 		{
-			return intersection.primitive->GetColor( intersection.position ) * Refract( ray, intersection, recursionDepth);
+			return Refract( ray, intersection, recursionDepth );
 		}
 		// DirectIllumination
 		else
@@ -129,7 +123,7 @@ vec3 Tmpl8::Game::DirectIllumination( Ray &ray, Intersection &intersection )
 		vec3 direction = l->position - intersection.position;
 		float distance = direction.length();
 		direction = direction * ( 1.f / distance );
-		//if (dot(direction, intersection.normal) < 0) continue;// Works only for spheres
+		if ( dot( direction, intersection.normal ) < 0 ) continue; // Works only for spheres
 
 		vec3 origin = intersection.position + direction * EPSILON;
 		Ray shadowRay = Ray( origin, direction );
@@ -152,7 +146,7 @@ vec3 Tmpl8::Game::DirectIllumination( Ray &ray, Intersection &intersection )
 		color += l->color * dot( intersection.normal, direction ) * ( 1 / pow( distance, 2 ) );
 	}
 
-	return color + .1f;
+	return color;
 }
 
 vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDepth )
@@ -165,13 +159,10 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 	vec3 n = intersection.normal;
 	float n1 = 1, n2 = intersection.primitive->refractionIndex;
 
-	bool outside = true;
-
-	if ( cosI > 0 )
+	if ( intersection.inside )
 	{
 		std::swap( n1, n2 );
 		n = -intersection.normal;
-		outside = false;
 	}
 	else
 	{
@@ -191,9 +182,7 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 		cosI = fabsf( cosI );
 
 		float Rs = ( ( n2 * cosI ) - ( n1 * cosT ) ) / ( ( n2 * cosI ) + ( n1 * cosT ) );
-		;
 		float Rp = ( ( n1 * cosI ) - ( n2 * cosT ) ) / ( ( n1 * cosI ) + ( n2 * cosT ) );
-		;
 		refractRatio = ( Rs * Rs + Rp * Rp ) / 2;
 	}
 
@@ -203,18 +192,19 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 
 	// If there is some refraction, get refraction color
 	vec3 refractColor = 0;
-	vec3 offset = EPSILON * intersection.normal;
 	if ( refractRatio < 1 )
 	{
-		vec3 direction = k < 0 ? 0 : n1n2 * ray.direction + ( n1n2 * cosI - sqrtf( k ) ) * n;
-		vec3 origin = outside ? intersection.position - offset : intersection.position + offset;
+		vec3 direction = (k < 0 ? 0 : n1n2 * ray.direction + ( n1n2 * cosI - sqrtf( k ) ) * n).normalized();
+		vec3 origin = intersection.position + ( direction * EPSILON );
 		Intersection refractIntersect;
 		refractColor = Trace( Ray( origin, direction ), recursionDepth - 1, refractIntersect );
-		if ( !outside )
+
+		if ( refractIntersect.inside && refractIntersect.t < std::numeric_limits<float>::max() )
 		{
-			float beersLaw = exp( -10e-6 * ( refractIntersect.position - intersection.position ).length() ); // absorption rate * depth
-			refractColor *= 1 / ( refractIntersect.position - intersection.position ).length();
-			//printf("HA BIER!");
+			vec3 color = refractIntersect.primitive->GetColor(refractIntersect.position);
+			float r = exp( intersection.primitive->absorptionColor.x * -refractIntersect.t ), g = exp( intersection.primitive->absorptionColor.y * -refractIntersect.t ), b = exp( intersection.primitive->absorptionColor.z * -refractIntersect.t ); // Add rate
+			//float beersLaw = exp( 10e-6 * -refractIntersect.t );
+			refractColor *= vec3(r, g, b);
 		}
 	}
 
@@ -322,33 +312,36 @@ void Tmpl8::Camera::ResetBounds()
 
 bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
 {
-	float t;
-	//vec3 C = position - ray.origin;
-	//float t = dot( C, ray.direction );
-	//vec3 Q = C - t * ray.direction;
-	//float p2 = dot( Q, Q );
-	//if ( p2 > r2 ) return false; // r2 = r * r
-	//t -= sqrt( ( r2 - p2 ) );
-	vec3 oc = ray.origin - position;
+	vec3 oc = position - ray.origin;
 	float a = dot( ray.direction, ray.direction );
-	float b = dot( ray.direction * 2.0f, oc );
-	float c = dot( oc, oc ) - r2;
-	float disc = sqrt( b * b - 4.0 * a * c );
-	float t1 = ( -1.0f * b + disc ) / ( 2.0f * a );
-	float t2 = ( -1.0f * b - disc ) / ( 2.0f * a );
-	if ( t1 < 0 && t2 < 0 ) return false;
-	if ( t1 < 0 )
+	float b = dot( ray.direction, oc );
+	float c = dot( oc, oc ) - b*b;
+	if ( c > r2 )
+		return false;
+	float disc = sqrt( r2 - c );
+	float t = b - disc;
+	float t2 = b + disc;
+	// float t1 = ( -1.0f * b + disc ) / ( 2.0f * a );
+	// float t2 = ( -1.0f * b - disc ) / ( 2.0f * a );
+	// if ( t1 < 0 && t2 < 0 ) return false;
+	bool inside = t < 0;
+	if ( inside )
+	{
+		//printf( "Binnen \n" );
 		t = t2;
-	else if ( t2 < 0 )
-		t = t1;
-	else
-		t = min( t1, t2 );
+	}
+	
+	if ( t < 0 )
+		t = t2;
+	//else
+	//	t = min( t1, t2 );
 	if ( ( t < intersection.t ) && ( t > 0 ) )
 	{
 		intersection.primitive = this;
 		intersection.position = ray.origin + ray.direction * t;
 		intersection.normal = ( intersection.position - position ).normalized();
 		intersection.t = t;
+		intersection.inside = inside;
 		return true;
 	}
 	return false;
