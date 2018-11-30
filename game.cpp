@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
+	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 4.0f, 1.0f );
 
 	Surface *planeTexture = new Surface("assets/Textures/PlaneTexture.jpg");
 	Surface *earth = new Surface("assets/Textures/earth.jpg");
@@ -245,29 +245,48 @@ void Game::Tick( float deltaTime )
 	// clear the graphics window
 	screen->Clear( 0 );
 	frame++;
+
+	#pragma omp parallel for num_threads(16)
+	for (unsigned i = 0; i<16; i++)
+	{
+		//for (int y = i * inc; y < (i + 1) * inc; y++)
+		//{
+		//	Ray ray = cam->GetRay(y % xlim, y / xlim);
+		//	vec3 color = Trace(ray, MAX_DEPTH);
+
+		//	uint max = 255;
+		//	uint red = sqrt(min(1.0f, color.x)) * 255.0f;
+		//	uint green = sqrt(min(1.0f, color.y)) * 255.0f;
+		//	uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
+
+		//	//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
+		//	*myPointer = (red << 16) + (green << 8) + (blue);
+		//	myPointer += 1;
+		//}
+		ThreadRays(i);
+	}
+	
+}
+
+void Game::ThreadRays(int i) {
 	int xlim = screen->GetWidth(), ylim = screen->GetHeight();
 	Pixel *pointer = screen->GetBuffer();
 
-	for ( int y = 0; y < ylim; y++ )
+	int inc = ylim * xlim / 16;
+	pointer += inc * i;
+	for (int y = i * inc; y < (i + 1) * inc; y++)
 	{
-		for ( int x = 0; x < xlim; x++ )
-		{
-			if ( x == 400 && y == 400 )
-			{
-				//printf("middle\n");
-			}
-			Ray ray = cam->GetRay( x, y );
-			vec3 color = Trace( ray, MAX_DEPTH );
+		Ray ray = cam->GetRay(y % xlim, y / xlim);
+		vec3 color = Trace(ray, MAX_DEPTH);
 
-			uint max = 255;
-			uint red = sqrt( min( 1.0f, color.x ) ) * 255.0f;
-			uint green = sqrt( min( 1.0f, color.y ) ) * 255.0f;
-			uint blue = sqrt( min( 1.0f, color.z ) ) * 255.0f;
+		uint max = 255;
+		uint red = sqrt(min(1.0f, color.x)) * 255.0f;
+		uint green = sqrt(min(1.0f, color.y)) * 255.0f;
+		uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
 
-			//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
-			*pointer = ( red << 16 ) + ( green << 8 ) + ( blue );
-			pointer += 1;
-		}
+		//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
+		*pointer = (red << 16) + (green << 8) + (blue);
+		pointer += 1;
 	}
 }
 
