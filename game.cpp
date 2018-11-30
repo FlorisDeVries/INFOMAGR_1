@@ -271,12 +271,10 @@ void Game::Tick( float deltaTime )
 	}
 }
 
-Camera::Camera( vec3 pos, vec3 dir, float FOV ) : position( pos ), direction( dir ), FOV( FOV ), screenWidth( screenWidth ), screenHeight( screenHeight )
+Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio(aspectRatio)
 {
-	screenCenter = pos + dir * FOV;
-	screenTopLeft = ScreenCorner( 0 );
-	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH );
-	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT );
+	ResetFOV();
+	ResetBounds();
 }
 
 Ray Tmpl8::Camera::GetRay( int x, int y )
@@ -309,10 +307,14 @@ vec3 Tmpl8::Camera::ScreenCorner( int corner )
 
 void Tmpl8::Camera::ResetBounds()
 {
-	screenCenter = position + direction * FOV;
+	screenCenter = position + direction * FOV_Distance;
 	screenTopLeft = ScreenCorner( 0 );
-	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH );
-	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT );
+	xinc = ( ScreenCorner( 1 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRWIDTH ) * aspectRatio;
+	yinc = ( ScreenCorner( 2 ) - ScreenCorner( 0 ) ) * ( 1.0f / SCRHEIGHT ) * (1.0f / aspectRatio);
+}
+
+void Tmpl8::Camera::ResetFOV() {
+	FOV_Distance = 1.0f / tanf(PI / FOV);
 }
 
 bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )
