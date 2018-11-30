@@ -3,7 +3,7 @@
 #include <limits>
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 1
+#define MAX_DEPTH 3
 #define SCENE 3
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
@@ -68,10 +68,10 @@ class Plane : public Primitive
 class Camera
 {
   public:
-	Camera( vec3 pos, vec3 dir, float FOV );
+	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio );
 	Ray GetRay(int x, int y);
 	vec3 position, direction, screenTopLeft;
-	float FOV;
+	float FOV, aspectRatio;
 	int screenWidth, screenHeight;
 	void ResetBounds();
 	void ResetFOV();
