@@ -246,23 +246,29 @@ void Game::Tick( float deltaTime )
 	screen->Clear( 0 );
 	frame++;
 
-	#pragma omp parallel for num_threads(16)
-	for (unsigned i = 0; i<16; i++)
+	//Unthreaded
+
+	/*int xlim = screen->GetWidth(), ylim = screen->GetHeight();
+	Pixel *pointer = screen->GetBuffer();
+
+	int inc = ylim * xlim / 16;
+	for (int i = 0; i < xlim * ylim; i++)
 	{
-		//for (int y = i * inc; y < (i + 1) * inc; y++)
-		//{
-		//	Ray ray = cam->GetRay(y % xlim, y / xlim);
-		//	vec3 color = Trace(ray, MAX_DEPTH);
+		Ray ray = cam->GetRay(i % xlim, i / xlim);
+		vec3 color = Trace(ray, MAX_DEPTH);
 
-		//	uint max = 255;
-		//	uint red = sqrt(min(1.0f, color.x)) * 255.0f;
-		//	uint green = sqrt(min(1.0f, color.y)) * 255.0f;
-		//	uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
+		uint red = sqrt(min(1.0f, color.x)) * 255.0f;
+		uint green = sqrt(min(1.0f, color.y)) * 255.0f;
+		uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
 
-		//	//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
-		//	*myPointer = (red << 16) + (green << 8) + (blue);
-		//	myPointer += 1;
-		//}
+		*pointer = (red << 16) + (green << 8) + (blue);
+		pointer += 1;
+	}*/
+
+	//Threaded
+	#pragma omp parallel for num_threads(16)
+	for (int i = 0; i<16; i++)
+	{
 		ThreadRays(i);
 	}
 	
@@ -279,12 +285,10 @@ void Game::ThreadRays(int i) {
 		Ray ray = cam->GetRay(y % xlim, y / xlim);
 		vec3 color = Trace(ray, MAX_DEPTH);
 
-		uint max = 255;
 		uint red = sqrt(min(1.0f, color.x)) * 255.0f;
 		uint green = sqrt(min(1.0f, color.y)) * 255.0f;
 		uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
 
-		//uint temp = (((min(max, (uint)color.x)) << 16) & REDMASK) + (((min(max, (uint)color.y)) << 8) & GREENMASK) + ((min(max, (uint)color.z)) & BLUEMASK);
 		*pointer = (red << 16) + (green << 8) + (blue);
 		pointer += 1;
 	}
