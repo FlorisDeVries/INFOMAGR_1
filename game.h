@@ -160,8 +160,8 @@ class Game
 		if (key == SDL_SCANCODE_Y && cam->FOV > 2.2f) cam->FOV -= 0.1f;
 		if (key == SDL_SCANCODE_H) cam->FOV += 0.1f;
 
-		cam->ResetBounds();
 		cam->ResetFOV();
+		cam->ResetBounds();
 	}
 
   private:

@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 4.0f, 1.3f );
+	cam = new Camera( vec3( -4, -4, -8 ), vec3( 0, 0, 1 ), 4.0f, 1.0f );
 
 	switch ( SCENE )
 	{
@@ -268,8 +268,8 @@ void Game::Tick( float deltaTime )
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio(aspectRatio)
 {
-	ResetBounds();
 	ResetFOV();
+	ResetBounds();
 }
 
 Ray Tmpl8::Camera::GetRay( int x, int y )
