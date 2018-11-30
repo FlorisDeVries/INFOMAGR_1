@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 1.0f / tanf( PI / 4.0f ) );
+	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 4.0f, 1.0f );
 
 	Surface *planeTexture = new Surface("assets/Textures/PlaneTexture.jpg");
 	Surface *earth = new Surface("assets/Textures/earth.jpg");
