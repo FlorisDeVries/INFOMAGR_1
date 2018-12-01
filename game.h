@@ -4,7 +4,7 @@
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
-#define SCENE 3
+#define SCENE 4
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
@@ -42,13 +42,13 @@ class Primitive
 
   protected:
 	Surface* texture;
-	Primitive( vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface *texture = 0) : color( color ), specularity( specularity ), refractionIndex( refractionIndex ), absorptionColor( absorptionColor ), texture(texture){};
+	Primitive( vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0) : color( color ), specularity( specularity ), refractionIndex( refractionIndex ), absorptionColor( absorptionColor ), texture(texture){};
 };
 
 class Sphere : public Primitive
 {
   public:
-	Sphere( vec3 pos, float r, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface* texture = 0 ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
+	Sphere( vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface* texture = 0 ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 
@@ -60,13 +60,23 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	  Plane(vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor = 1, Surface* texture = 0);
+	  Plane(vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface* texture = 0);
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 
   private:
 	vec3 normal, UAxis, VAxis;
 	float dist;
+};
+
+class Triangle : public Primitive
+{
+public:
+	Triangle(vec3 v0, vec3 v1, vec3 v2, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface* texture = 0);
+	bool Intersect(Ray &ray, Intersection &intersection) override;
+	vec3 GetColor(vec3 pos) override;
+private:
+	vec3 normal, v0, v1, v2;
 };
 
 class Camera
@@ -122,6 +132,7 @@ class Game
 	void Tick( float deltaTime );
 	void ThreadedRays(int i);
 	void HandleInput();
+	bool ReadObj(const char* path, std::vector<Primitive *> &primitives);
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
 		if (button == SDL_BUTTON_RIGHT)
