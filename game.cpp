@@ -248,7 +248,9 @@ void Game::Tick( float deltaTime )
 
 	//Threaded
 	#pragma omp parallel for num_threads(THREADS)
-	for (int i = 0; i<THREADS; i++) ThreadedRays(i);	
+	for (int i = 0; i<THREADS; i++) ThreadedRays(i);
+
+	HandleInput();
 }
 
 void Game::ThreadedRays(int i) {
@@ -291,6 +293,54 @@ void Game::ThreadedRays(int i) {
 		*pointer = (red << 16) + (green << 8) + (blue);
 		pointer += j % xHeight == 0 ? (ylim - xHeight + 1) : 1;
 	}*/
+}
+
+void Game::KeyUp(int key) {
+	//Forward, left, backward, right, up, down
+	if (key == SDL_SCANCODE_W) isWDown = false;
+	if (key == SDL_SCANCODE_A) isADown = false;
+	if (key == SDL_SCANCODE_S) isSDown = false;
+	if (key == SDL_SCANCODE_D) isDDown = false;
+	if (key == SDL_SCANCODE_R) isRDown = false;
+	if (key == SDL_SCANCODE_F) isFDown = false;
+
+	// Increase/decrease FOV
+	if (key == SDL_SCANCODE_Y) isYDown = false;
+	if (key == SDL_SCANCODE_H) isHDown = false;
+}
+
+void Game::KeyDown(int key)
+{
+	//Forward, left, backward, right, up, down
+	if (key == SDL_SCANCODE_W) isWDown = true;
+	if (key == SDL_SCANCODE_A) isADown = true;
+	if (key == SDL_SCANCODE_S) isSDown = true;
+	if (key == SDL_SCANCODE_D) isDDown = true;
+	if (key == SDL_SCANCODE_R) isRDown = true;
+	if (key == SDL_SCANCODE_F) isFDown = true;
+
+	// Increase/decrease FOV
+	if (key == SDL_SCANCODE_Y) isYDown = true;
+	if (key == SDL_SCANCODE_H) isHDown = true;
+}
+
+void Game::HandleInput() {
+	vec3 left = cross(cam->direction, vec3(0, 1, 0)).normalized();
+	vec3 up = cross(cam->direction, left).normalized();
+	//Forward, left, backward, right, up, down
+
+	if (isWDown) cam->position += cam->direction * MOVEMENTRATE;
+	if (isADown) cam->position += left * MOVEMENTRATE;
+	if (isSDown) cam->position += -cam->direction * MOVEMENTRATE;
+	if (isDDown) cam->position += -left * MOVEMENTRATE;
+	if (isRDown) cam->position += up * MOVEMENTRATE;
+	if (isFDown) cam->position += -up * MOVEMENTRATE;
+	// IisWDown
+	if (isYDown && cam->FOV > 2.2f) cam->FOV -= 0.1f;
+	if (isHDown) cam->FOV += 0.1f;
+
+	cam->ResetFOV();
+	cam->ResetBounds();
 }
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio(aspectRatio)

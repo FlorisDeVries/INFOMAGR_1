@@ -121,6 +121,7 @@ class Game
 	vec3 Refract( Ray &ray, Intersection &intersection, int recursionDepth );
 	void Tick( float deltaTime );
 	void ThreadedRays(int i);
+	void HandleInput();
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
 		if (button == SDL_BUTTON_RIGHT)
@@ -146,31 +147,13 @@ class Game
 			cam->ResetBounds();
 		}
 	}
-	void KeyUp( int key )
-	{ /* implement if you want to handle keys */
-	}
-	void KeyDown( int key )
-	{ 
-		vec3 left = cross(cam->direction, vec3(0, 1, 0)).normalized();
-		vec3 up = cross(cam->direction, left).normalized();
-			//Forward, left, backward, right, up, down
-		
-		if(key == SDL_SCANCODE_W) cam->position += cam->direction * MOVEMENTRATE;
-		if(key == SDL_SCANCODE_A) cam->position += left * MOVEMENTRATE;
-		if(key == SDL_SCANCODE_S) cam->position += -cam->direction * MOVEMENTRATE;
-		if(key == SDL_SCANCODE_D) cam->position += -left * MOVEMENTRATE;
-		if(key == SDL_SCANCODE_R) cam->position += up * MOVEMENTRATE;
-		if(key == SDL_SCANCODE_F) cam->position += -up * MOVEMENTRATE;
-			// Increase/decrease FOV
-		if (key == SDL_SCANCODE_Y && cam->FOV > 2.2f) cam->FOV -= 0.1f;
-		if (key == SDL_SCANCODE_H) cam->FOV += 0.1f;
 
-		cam->ResetFOV();
-		cam->ResetBounds();
-	}
+	void KeyUp(int key);
+	void KeyDown(int key);
 
   private:
 	Surface *screen;
+	bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
 };
 
 }; // namespace Tmpl8
