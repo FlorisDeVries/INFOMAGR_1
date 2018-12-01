@@ -301,8 +301,8 @@ void Game::KeyUp(int key) {
 	if (key == SDL_SCANCODE_A) isADown = false;
 	if (key == SDL_SCANCODE_S) isSDown = false;
 	if (key == SDL_SCANCODE_D) isDDown = false;
-	if (key == SDL_SCANCODE_R) isRDown = false;
-	if (key == SDL_SCANCODE_F) isFDown = false;
+	if (key == SDL_SCANCODE_SPACE) isRDown = false;
+	if (key == SDL_SCANCODE_LSHIFT) isFDown = false;
 
 	// Increase/decrease FOV
 	if (key == SDL_SCANCODE_Y) isYDown = false;
@@ -316,8 +316,8 @@ void Game::KeyDown(int key)
 	if (key == SDL_SCANCODE_A) isADown = true;
 	if (key == SDL_SCANCODE_S) isSDown = true;
 	if (key == SDL_SCANCODE_D) isDDown = true;
-	if (key == SDL_SCANCODE_R) isRDown = true;
-	if (key == SDL_SCANCODE_F) isFDown = true;
+	if (key == SDL_SCANCODE_SPACE) isRDown = true;
+	if (key == SDL_SCANCODE_LSHIFT) isFDown = true;
 
 	// Increase/decrease FOV
 	if (key == SDL_SCANCODE_Y) isYDown = true;
@@ -333,8 +333,8 @@ void Game::HandleInput() {
 	if (isADown) cam->position += left * MOVEMENTRATE;
 	if (isSDown) cam->position += -cam->direction * MOVEMENTRATE;
 	if (isDDown) cam->position += -left * MOVEMENTRATE;
-	if (isRDown) cam->position += up * MOVEMENTRATE;
-	if (isFDown) cam->position += -up * MOVEMENTRATE;
+	if (isRDown) cam->position += -up * MOVEMENTRATE;
+	if (isFDown) cam->position += up * MOVEMENTRATE;
 	// IisWDown
 	if (isYDown && cam->FOV > 2.2f) cam->FOV -= 0.1f;
 	if (isHDown) cam->FOV += 0.1f;
