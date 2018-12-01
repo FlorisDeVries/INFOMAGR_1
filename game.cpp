@@ -12,7 +12,7 @@ void Game::Init()
 	Surface *earth = new Surface("assets/Textures/earth.jpg");
 	Surface *eye = new Surface("assets/Textures/oog.jpg");
 
-	ReadObj("assets/Obj/DragonEgg.obj", primitives);
+	ReadObj("assets/Obj/Test.obj", primitives);
 	
 	switch (SCENE)
 	{
@@ -64,9 +64,10 @@ void Game::Init()
 		primitives.push_back(new Sphere(vec3(-3, -3.f, 1), 2.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
 		primitives.push_back(new Sphere(vec3(0, -4.f, 1), 1.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
 		primitives.push_back(new Sphere(vec3(2, -4.5f, 1), .5f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
-		primitives.push_back(new Sphere(vec3(2, -4.5f, 3), .5f, vec3(1.f, .2f, .2f), 0.0f, 0.0f, 1, earth));
+		primitives.push_back(new Sphere(vec3(0, 0, 0), .5f, vec3(1.f, .2f, .2f), 0.0f, 0.0f, 1, earth));
 
 		primitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(0), .0f, 0.0f));
+		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(.9f, .9f ,.9f)));
 
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(0, 20, 0)));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(2, 0, -2)));
@@ -380,7 +381,7 @@ bool Tmpl8::Game::ReadObj(const char * path, std::vector<Primitive *> &primitive
 		}
 		else if (strcmp(lineHeader, "f") == 0) {
 			std::string vertex1, vertex2, vertex3;
-			unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+			unsigned int vertexIndex[3];
 			int matches = fscanf(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
 			if (matches != 3) {
 				printf("File can't be read by our simple parser : ( Try exporting with other options\n");
@@ -389,14 +390,9 @@ bool Tmpl8::Game::ReadObj(const char * path, std::vector<Primitive *> &primitive
 			vertexIndices.push_back(vertexIndex[0]);
 			vertexIndices.push_back(vertexIndex[1]);
 			vertexIndices.push_back(vertexIndex[2]);
+
+			primitives.push_back(new Triangle(temp_vertices[vertexIndex[0] - 1], temp_vertices[vertexIndex[1] - 1], temp_vertices[vertexIndex[2] - 1]));
 		}
-	}
-	
-	for (unsigned int i = 0; i < vertexIndices.size(); i+=3) {
-		unsigned int vertexIndex = vertexIndices[i];
-		// Obj index start 1, while they should start at 0
-		primitives.push_back(new Triangle(temp_vertices[vertexIndex - 1], temp_vertices[vertexIndex], temp_vertices[vertexIndex + 1]));
-		//printf("Adding new triangle\n");
 	}
 	return true;
 }
@@ -575,42 +571,28 @@ vec3 Tmpl8::Plane::GetColor(vec3 pos)
 
 Tmpl8::Triangle::Triangle(vec3 v0, vec3 v1, vec3 v2, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor, Surface * texture) : v0(v0), v1(v1), v2(v2), Primitive(color, specularity, refractionIndex, absorptionColor, texture)
 {
-	//https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 	normal = cross((v1 - v0), (v2 - v0)).normalized();
+	printf("Normal: %f, %f, %f\n", normal.x, normal.y, normal.z);
 }
 
 bool Tmpl8::Triangle::Intersect(Ray & ray, Intersection & intersection)
 {
-	return false;
-	vec3 v0v1 = v1 - v0;
-	vec3 v0v2 = v2 - v0;
-	vec3 pvec = ray.direction.cross(v0v2);
-	float det = v0v1.dot(pvec);
+	vec3 v1v0 = v1 - v0;
+	vec3 v2v0 = v2 - v0;
+	vec3 rov0 = ray.origin - v0;
 
-	float u, v, t;
-#ifdef CULLING 
-	// if the determinant is negative the triangle is backfacing
-	// if the determinant is close to 0, the ray misses the triangle
-	if (det < EPSILON) return false;
-#else 
-	// ray and triangle are parallel if det is close to 0
-	if (fabs(det) < EPSILON) return false;
-#endif 
-	float invDet = 1 / det;
+	vec3  n = cross(v1v0, v2v0);
+	vec3  q = cross(rov0, ray.direction);
+	float d = 1.0 / dot(ray.direction, n);
+	float u = d * dot(-q, v2v0);
+	float v = d * dot(q, v1v0);
+	float t = d * dot(-n, rov0);
 
-	vec3 tvec = ray.origin - v0;
-	u = tvec.dot(pvec) * invDet;
-	if (u < 0 || u > 1) return false;
-
-	vec3 qvec = tvec.cross(v0v1);
-	v = ray.direction.dot(qvec) * invDet;
-	if (v < 0 || u + v > 1) return false;
-
-	t = v0v2.dot(qvec) * invDet;
+	if (u < 0.0 || u > 1.0 || v < 0.0 || (u + v) > 1.0) return false;
 
 	intersection.primitive = this;
 	intersection.position = ray.origin + ray.direction * t;
-	intersection.normal = -1.0f * normal;
+	intersection.normal = n;
 	intersection.t = t;
 
 	return true;
@@ -618,5 +600,5 @@ bool Tmpl8::Triangle::Intersect(Ray & ray, Intersection & intersection)
 
 vec3 Tmpl8::Triangle::GetColor(vec3 pos)
 {
-	return color;
+	return 1;
 }

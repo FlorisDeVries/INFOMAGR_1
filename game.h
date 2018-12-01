@@ -4,7 +4,7 @@
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
-#define SCENE 4
+#define SCENE 3
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
