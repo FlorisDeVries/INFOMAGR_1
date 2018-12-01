@@ -10,6 +10,7 @@
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
+#define THREADS 64				//Keep as a power of 2
 
 namespace Tmpl8
 {
@@ -119,7 +120,7 @@ class Game
 	vec3 DirectIllumination( Ray &ray, Intersection &intersection );
 	vec3 Refract( Ray &ray, Intersection &intersection, int recursionDepth );
 	void Tick( float deltaTime );
-	void ThreadRays(int i);
+	void ThreadedRays(int i);
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
 		if (button == SDL_BUTTON_RIGHT)

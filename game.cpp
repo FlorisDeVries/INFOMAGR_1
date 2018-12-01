@@ -246,43 +246,42 @@ void Game::Tick( float deltaTime )
 	screen->Clear( 0 );
 	frame++;
 
-	//Unthreaded
-
-	/*int xlim = screen->GetWidth(), ylim = screen->GetHeight();
-	Pixel *pointer = screen->GetBuffer();
-
-	int inc = ylim * xlim / 16;
-	for (int i = 0; i < xlim * ylim; i++)
-	{
-		Ray ray = cam->GetRay(i % xlim, i / xlim);
-		vec3 color = Trace(ray, MAX_DEPTH);
-
-		uint red = sqrt(min(1.0f, color.x)) * 255.0f;
-		uint green = sqrt(min(1.0f, color.y)) * 255.0f;
-		uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
-
-		*pointer = (red << 16) + (green << 8) + (blue);
-		pointer += 1;
-	}*/
-
 	//Threaded
-	#pragma omp parallel for num_threads(16)
-	for (int i = 0; i<16; i++)
-	{
-		ThreadRays(i);
-	}
-	
+	#pragma omp parallel for num_threads(THREADS)
+	for (int i = 0; i<THREADS; i++) ThreadedRays(i);	
 }
 
-void Game::ThreadRays(int i) {
+void Game::ThreadedRays(int i) {
 	int xlim = screen->GetWidth(), ylim = screen->GetHeight();
+	int sqThreads = sqrt(THREADS);
+	int xHeight = xlim / sqThreads, yHeight = ylim / sqThreads;
 	Pixel *pointer = screen->GetBuffer();
 
-	int inc = ylim * xlim / 16;
-	pointer += inc * i;
-	for (int y = i * inc; y < (i + 1) * inc; y++)
+	int xstart = i % sqThreads * xHeight;
+	int ystart = i / sqThreads * yHeight;
+	pointer += xstart + ystart * ylim;
+
+	for (int j = 0; j < yHeight; j++)
 	{
-		Ray ray = cam->GetRay(y % xlim, y / xlim);
+		for (int k = 0; k < xHeight; k++)
+		{
+			Ray ray = cam->GetRay(xstart + k, ystart + j);
+			vec3 color = Trace(ray, MAX_DEPTH);
+
+			uint red = sqrt(min(1.0f, color.x)) * 255.0f;
+			uint green = sqrt(min(1.0f, color.y)) * 255.0f;
+			uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
+
+			*pointer = (red << 16) + (green << 8) + (blue);
+			pointer += 1;
+		}
+		pointer += ylim - xHeight;
+	}
+
+	// Alternate (one-counter) method; has some bugs
+	/*for (int j = 0; j < xHeight * yHeight; j++)
+	{
+		Ray ray = cam->GetRay(xstart + j % yHeight, ystart + j / xHeight);
 		vec3 color = Trace(ray, MAX_DEPTH);
 
 		uint red = sqrt(min(1.0f, color.x)) * 255.0f;
@@ -290,8 +289,8 @@ void Game::ThreadRays(int i) {
 		uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
 
 		*pointer = (red << 16) + (green << 8) + (blue);
-		pointer += 1;
-	}
+		pointer += j % xHeight == 0 ? (ylim - xHeight + 1) : 1;
+	}*/
 }
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio(aspectRatio)
