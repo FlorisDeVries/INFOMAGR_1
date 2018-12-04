@@ -15,3 +15,6 @@ complex | optimized renderer [.5]
 
 Done Extras:
 5. dielectric[1]
+
+- Fix refraction
+- Fix reflection

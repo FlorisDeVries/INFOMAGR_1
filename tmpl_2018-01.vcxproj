@@ -55,7 +55,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>lib\glew-2.1.0\include;lib\SDL2-2.0.9\include;lib\FreeImage\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Floris\OneDrive\Uni\Master\INFOMAGR_1\lib\tinyObj;lib\glew-2.1.0\include;lib\SDL2-2.0.9\include;lib\FreeImage\include</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
@@ -72,7 +72,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <Link>
-      <AdditionalLibraryDirectories>lib\SDL2-2.0.9\lib\x86;lib\glew-2.1.0\lib\Win32;lib\FreeImage\lib32</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\Floris\OneDrive\Uni\Master\INFOMAGR_1\lib\tinyObj;lib\SDL2-2.0.9\lib\x86;lib\glew-2.1.0\lib\Win32;lib\FreeImage\lib32</AdditionalLibraryDirectories>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
