@@ -3,7 +3,6 @@
 #include <vector>
 #include <atomic>
 #include <tuple>
-#include <string>
 
 #pragma region Settings
 #define EPSILON 0.001f
@@ -15,7 +14,7 @@
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
 #define THREADS 8		// 8 threads might melt Windows
-#define TILES 256		// Keep as a power of an even number
+#define TILES 1024		// Keep as a power of an even number
 #pragma endregion
 
 namespace Tmpl8

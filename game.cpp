@@ -24,10 +24,16 @@ void Game::Init()
 		// Simple scene
 		primitives.push_back( new Sphere( vec3( 0, 1, 1 ), 2.f, vec3( 1.0f ), 0.f, 1.5f ) );
 		primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
-		primitives.push_back(new Sphere(vec3(2, 0, 3), 2.f, vec3(1.f), .9f, 0.0f));
-		primitives.push_back(new Sphere(vec3(-5, 0, 5), 1.5f, vec3(1.f), 1.f, .0f));
+		primitives.push_back(new Sphere(vec3(2, 0, 5), 2.f, vec3(1.f, 0.3f, 0.3f), .6f, 0.0f));
+		primitives.push_back(new Sphere(vec3(-5, -1, 5), 1.5f, vec3(1.f), 1.f, .0f));
+		primitives.push_back(new Sphere(vec3(18, 6, 15), 6.f, vec3(1.f), 0.f, .0f, 1, earth));
+
 		primitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, .2f, .2f), .0f, 0.0f, 1, planeTexture));
-		primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+		primitives.push_back(new Plane(vec3(-1, 0, 0), 15, vec3(1.f, .2f, .2f), .0f, 0.0f));
+
+		ReadObj(testCubePath, primitives, vec3(1.f, .2f, .2f), vec3(-3, -1, 2), .0f);
+		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(0, 20, 0)));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(2, 0, -2)));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(0)));
@@ -64,10 +70,12 @@ void Game::Init()
 		break;
 	case 3:
 		// Scene for Beer's law
-		primitives.push_back(new Sphere(vec3(-9, -1.f, 1), 4.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
-		primitives.push_back(new Sphere(vec3(-3, -3.f, 1), 2.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
-		primitives.push_back(new Sphere(vec3(0, -4.f, 1), 1.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
-		primitives.push_back(new Sphere(vec3(2, -4.5f, 1), .5f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(-4, -1.f, 1), 4.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(2, -3.f, 1), 2.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(5, -4.f, 1), 1.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(7, -4.5f, 1), .5f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+
+		primitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
 
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(0, 20, 0)));
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY), vec3(2, 0, -2)));
