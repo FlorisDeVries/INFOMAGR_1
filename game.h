@@ -79,7 +79,6 @@ class Camera
 	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight);
 	Ray GetRay(int x, int y);
 	std::tuple<int, std::vector<Ray>> GetNextRays();
-	std::tuple<int, Ray> GetNextRay(int screenWidth, int screenHeight);
 	vec3 position, direction, screenTopLeft;
 	float FOV, aspectRatio;
 	int screenWidth, screenHeight;
