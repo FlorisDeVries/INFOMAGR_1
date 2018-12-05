@@ -242,13 +242,14 @@ void Game::Tick( float deltaTime )
 		//printf("Direction: %f, %f, %f\n", cam->direction.x, cam->direction.y, cam->direction.z);
 	}
 
+	//Reset the tile counter used in the camera for multithreading
 	cam->ResetCounter();
 
 	// clear the graphics window
 	screen->Clear( 0 );
 	frame++;
 
-	//Threaded
+	//Threaded rays using OpenMP
 	#pragma omp parallel for num_threads(THREADS)
 	for (int i = 0; i<THREADS; i++) ThreadedRays(i);
 
@@ -259,22 +260,37 @@ void Game::ThreadedRays(int i) {
 	int tileIdx = 0;
 	std::vector<int> tileCounter;
 
+	// While the camera has tiles of rays left to render, get these tiles,
+	// trace and render them.
 	while (tileIdx >= 0) {
+		//The next set of rays (tiled)
 		std::tuple<int, std::vector<Ray>> rayVectorTuple = cam->GetNextRays();
+
+		//When no tiles are left, the tile index passed is -1
 		tileIdx = std::get<0>(rayVectorTuple);
 		if (tileIdx < 0)
 			continue;
+
+		//Get the vector of tiles
 		std::vector<Ray> rayVector = std::get<1>(rayVectorTuple);
 
+		//Calculate some values for vector and screen iteration
+
+		//The number of tiles in one direction
 		int sqTiles = sqrt(TILES);
+
+		//The height and width of a tile
 		int xHeight = SCRWIDTH / sqTiles, yHeight = SCRHEIGHT / sqTiles;
 
+		//The starting coordinates of the passed tile
 		int xstart = tileIdx % sqTiles * xHeight;
 		int ystart = tileIdx / sqTiles * yHeight;
 
+		//The first pixel of the tile passed
 		Pixel *pointer = screen->GetBuffer();
 		pointer += xstart + ystart * SCRWIDTH;
 
+		//Iterate over the tile
 		for (int i = 0; i < yHeight; i++)
 			for (int j = 0; j < xHeight; j++) {
 				vec3 color = Trace(rayVector[i * yHeight + j], MAX_DEPTH);
@@ -288,10 +304,6 @@ void Game::ThreadedRays(int i) {
 			}
 		tileCounter.push_back(tileIdx);
 	}
-
-	/*string s = "Tiles drawn by thread " + std::to_string(i) + ": ";
-	for (auto t : tileCounter) s += "|" + std::to_string(t) + "| ";
-	printf("%s\n", s);*/
 }
 
 void Game::KeyUp(int key) {
@@ -326,15 +338,16 @@ void Game::KeyDown(int key)
 void Game::HandleInput() {
 	vec3 left = cross(cam->direction, vec3(0, 1, 0)).normalized();
 	vec3 up = cross(cam->direction, left).normalized();
-	//Forward, left, backward, right, up, down
 
+	//Forward, left, backward, right, up, down
 	if (isWDown) cam->position += cam->direction * MOVEMENTRATE;
 	if (isADown) cam->position += left * MOVEMENTRATE;
 	if (isSDown) cam->position += -cam->direction * MOVEMENTRATE;
 	if (isDDown) cam->position += -left * MOVEMENTRATE;
 	if (isRDown) cam->position += -up * MOVEMENTRATE;
 	if (isFDown) cam->position += up * MOVEMENTRATE;
-	// IisWDown
+
+	// FOV 
 	if (isYDown && cam->FOV > 2.2f) cam->FOV -= 0.1f;
 	if (isHDown) cam->FOV += 0.1f;
 
@@ -357,11 +370,18 @@ Ray Tmpl8::Camera::GetRay( int x, int y )
 	return r;
 }
 
+// Returns a tuple containing the tile index
+// and a vector of the rays for that tile
 std::tuple<int, std::vector<Ray>> Tmpl8::Camera::GetNextRays() {
+	// <rayCounter> is an atomic int
 	int tileIdx = rayCounter++;
 	std::vector<Ray> rayVector;
+
+	// If the counter is past the number of tiles, let the thread know it can stop
+	// requesting tiles
 	if (tileIdx >= TILES) return std::make_tuple(-1, rayVector);
 
+	// Some helper numbers for tile traversal
 	int sqTiles = sqrt(TILES);
 	int xHeight = screenWidth / sqTiles, yHeight = screenHeight / sqTiles;
 
