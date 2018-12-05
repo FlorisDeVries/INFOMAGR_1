@@ -6,7 +6,7 @@
 void Game::Init()
 {
 	//Setting up the scene
-	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 4.0f, 1.0f );
+	cam = new Camera( vec3(0, 0, -8), vec3( 0, 0, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT);
 
 	Surface *planeTexture = new Surface("assets/Textures/PlaneTexture.jpg");
 	Surface *earth = new Surface("assets/Textures/earth.jpg");
@@ -242,6 +242,8 @@ void Game::Tick( float deltaTime )
 		//printf("Direction: %f, %f, %f\n", cam->direction.x, cam->direction.y, cam->direction.z);
 	}
 
+	cam->ResetCounter();
+
 	// clear the graphics window
 	screen->Clear( 0 );
 	frame++;
@@ -254,45 +256,42 @@ void Game::Tick( float deltaTime )
 }
 
 void Game::ThreadedRays(int i) {
-	int xlim = screen->GetWidth(), ylim = screen->GetHeight();
-	int sqThreads = sqrt(THREADS);
-	int xHeight = xlim / sqThreads, yHeight = ylim / sqThreads;
-	Pixel *pointer = screen->GetBuffer();
+	int tileIdx = 0;
+	std::vector<int> tileCounter;
 
-	int xstart = i % sqThreads * xHeight;
-	int ystart = i / sqThreads * yHeight;
-	pointer += xstart + ystart * ylim;
+	while (tileIdx >= 0) {
+		std::tuple<int, std::vector<Ray>> rayVectorTuple = cam->GetNextRays();
+		tileIdx = std::get<0>(rayVectorTuple);
+		if (tileIdx < 0)
+			continue;
+		std::vector<Ray> rayVector = std::get<1>(rayVectorTuple);
 
-	for (int j = 0; j < yHeight; j++)
-	{
-		for (int k = 0; k < xHeight; k++)
-		{
-			Ray ray = cam->GetRay(xstart + k, ystart + j);
-			vec3 color = Trace(ray, MAX_DEPTH);
+		int sqTiles = sqrt(TILES);
+		int xHeight = SCRWIDTH / sqTiles, yHeight = SCRHEIGHT / sqTiles;
 
-			uint red = sqrt(min(1.0f, color.x)) * 255.0f;
-			uint green = sqrt(min(1.0f, color.y)) * 255.0f;
-			uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
+		int xstart = tileIdx % sqTiles * xHeight;
+		int ystart = tileIdx / sqTiles * yHeight;
 
-			*pointer = (red << 16) + (green << 8) + (blue);
-			pointer += 1;
-		}
-		pointer += ylim - xHeight;
+		Pixel *pointer = screen->GetBuffer();
+		pointer += xstart + ystart * SCRWIDTH;
+
+		for (int i = 0; i < yHeight; i++)
+			for (int j = 0; j < xHeight; j++) {
+				vec3 color = Trace(rayVector[i * yHeight + j], MAX_DEPTH);
+
+				uint red = sqrt(min(1.0f, color.x)) * 255.0f;
+				uint green = sqrt(min(1.0f, color.y)) * 255.0f;
+				uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
+
+				*pointer = (red << 16) + (green << 8) + (blue);
+				pointer += (j + 1) % xHeight == 0 ? (SCRWIDTH - xHeight + 1) : 1;
+			}
+		tileCounter.push_back(tileIdx);
 	}
 
-	// Alternate (one-counter) method; has some bugs
-	/*for (int j = 0; j < xHeight * yHeight; j++)
-	{
-		Ray ray = cam->GetRay(xstart + j % yHeight, ystart + j / xHeight);
-		vec3 color = Trace(ray, MAX_DEPTH);
-
-		uint red = sqrt(min(1.0f, color.x)) * 255.0f;
-		uint green = sqrt(min(1.0f, color.y)) * 255.0f;
-		uint blue = sqrt(min(1.0f, color.z)) * 255.0f;
-
-		*pointer = (red << 16) + (green << 8) + (blue);
-		pointer += j % xHeight == 0 ? (ylim - xHeight + 1) : 1;
-	}*/
+	/*string s = "Tiles drawn by thread " + std::to_string(i) + ": ";
+	for (auto t : tileCounter) s += "|" + std::to_string(t) + "| ";
+	printf("%s\n", s);*/
 }
 
 void Game::KeyUp(int key) {
@@ -343,7 +342,7 @@ void Game::HandleInput() {
 	cam->ResetBounds();
 }
 
-Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio(aspectRatio)
+Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio(aspectRatio), screenWidth(screenWidth), screenHeight(screenHeight)
 {
 	ResetFOV();
 	ResetBounds();
@@ -356,6 +355,29 @@ Ray Tmpl8::Camera::GetRay( int x, int y )
 	Ray r = Ray( position, rayDirection );
 
 	return r;
+}
+
+std::tuple<int, std::vector<Ray>> Tmpl8::Camera::GetNextRays() {
+	int tileIdx = rayCounter++;
+	std::vector<Ray> rayVector;
+	if (tileIdx >= TILES) return std::make_tuple(-1, rayVector);
+
+	int sqTiles = sqrt(TILES);
+	int xHeight = screenWidth / sqTiles, yHeight = screenHeight / sqTiles;
+
+	int xstart = tileIdx % sqTiles * xHeight;
+	int ystart = tileIdx / sqTiles * yHeight;
+
+	for (int j = 0; j < yHeight; j++)
+	{
+		for (int k = 0; k < xHeight; k++)
+		{
+			Ray ray = GetRay(xstart + k, ystart + j);
+			rayVector.push_back(ray);
+		}
+	}
+
+	return std::make_tuple(tileIdx, rayVector);
 }
 
 vec3 Tmpl8::Camera::ScreenCorner( int corner )
@@ -387,6 +409,11 @@ void Tmpl8::Camera::ResetBounds()
 
 void Tmpl8::Camera::ResetFOV() {
 	FOV_Distance = 1.0f / tanf(PI / FOV);
+}
+
+void Tmpl8::Camera::ResetCounter()
+{
+	rayCounter = 0;
 }
 
 bool Tmpl8::Sphere::Intersect( Ray &ray, Intersection &intersection )

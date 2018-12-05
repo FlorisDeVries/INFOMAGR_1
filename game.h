@@ -1,16 +1,20 @@
 #pragma once
 #include <limits>
 #include <vector>
+#include <atomic>
+#include <tuple>
+#include <string>
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
-#define SCENE 3
+#define SCENE 1
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
-#define THREADS 64				//Keep as a power of 2
+#define THREADS 8				//Keep as a power of 2
+#define TILES 1024
 
 namespace Tmpl8
 {
@@ -72,15 +76,19 @@ class Plane : public Primitive
 class Camera
 {
   public:
-	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio );
+	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight);
 	Ray GetRay(int x, int y);
+	std::tuple<int, std::vector<Ray>> GetNextRays();
+	std::tuple<int, Ray> GetNextRay(int screenWidth, int screenHeight);
 	vec3 position, direction, screenTopLeft;
 	float FOV, aspectRatio;
 	int screenWidth, screenHeight;
 	void ResetBounds();
 	void ResetFOV();
+	void ResetCounter();
 
   private:
+	std::atomic<int> rayCounter = 0;
 	float FOV_Distance;
 	vec3 screenCenter;
 	vec3 ScreenCorner( int corner = 0 );
