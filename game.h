@@ -10,7 +10,7 @@
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
-#define THREADS 1 //Keep as a power of 2
+#define THREADS 4 //Keep as a power of 2
 
 namespace Tmpl8
 {
@@ -72,7 +72,7 @@ class Plane : public Primitive
 class Triangle : public Primitive
 {
   public:
-	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 );
+	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : v0(v0), v1(v1), v2(v2), normal(normal), Primitive(color, specularity, refractionIndex, absorptionColor, texture){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 
@@ -132,7 +132,7 @@ class Game
 	void Tick( float deltaTime );
 	void ThreadedRays( int i );
 	void HandleInput();
-	bool ReadObj( const char *path, std::vector<Primitive *> &primitives );
+	bool ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0);
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
 		if ( button == SDL_BUTTON_RIGHT )
