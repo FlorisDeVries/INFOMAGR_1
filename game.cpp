@@ -14,8 +14,6 @@ void Game::Init()
 	Surface *earth = new Surface( "assets/Textures/earth.jpg" );
 	Surface *eye = new Surface( "assets/Textures/oog.jpg" );
 
-	ReadObj( "assets/Obj/Test.obj", primitives );
-
 	switch ( SCENE )
 	{
 	case 1:
@@ -73,9 +71,12 @@ void Game::Init()
 		break;
 	case 4:
 		primitives.push_back( new Sphere( vec3( 2, -4.5f, 0 ), .5f, vec3( 1.f, .2f, .2f ), 0.0f, 0.0f, 1, earth ) );
-		//primitives.push_back( new Triangle( vec3( 3, 0, 0 ), vec3( 0, 0, 0 ), vec3( 0, 3, 1 ), vec3(1.f, .2f, .2f) ) );
 
-		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 15, -5 ) ) );
+		ReadObj( "assets/Obj/Test.obj", primitives );
+		
+		//primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
+
+		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 10, -5 ) ) );
 		break;
 	default:
 		break;
@@ -381,6 +382,7 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 
 	vec3 normal;
 
+	int count = 0;
 	// Loop over shapes
 	for ( size_t s = 0; s < shapes.size(); s++ )
 	{
@@ -390,6 +392,10 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 		{
 			int fv = shapes[s].mesh.num_face_vertices[f];
 
+			std::vector<vec3*> temp_vertices;
+			std::vector<vec3*> temp_normals;
+
+			
 			// Loop over vertices in the face.
 			for ( size_t v = 0; v < fv; v++ )
 			{
@@ -403,14 +409,9 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 				tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
 				tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
 				tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
-				vec3 v1v0 = vy - vx;
-				vec3 v2v0 = vz - vx;
-				normal = cross( v1v0, v2v0 );
 
-				if (dot(normal, nx) < 0)
-					normal = -normal;
-
-				primitives.push_back( new Triangle( vx, vy, vz, normal ) );
+				temp_vertices.push_back(new vec3(vx, vy, vz));
+				temp_normals.push_back(new vec3(nx, ny, nz));
 				// Optional: vertex colors
 				// tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
 				// tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
@@ -418,10 +419,26 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 			}
 			index_offset += fv;
 
+			vec3 vx = *temp_vertices[0];
+			vec3 vy = *temp_vertices[1];
+			vec3 vz = *temp_vertices[2];
+
+
+			vec3 v1v0 = vy - vx;
+			vec3 v2v0 = vz - vx;
+			normal = cross( v1v0, v2v0 );
+						
+			if ( dot( normal, *temp_normals[0] ) < 0 )
+				normal = -normal;
+			
+			primitives.push_back( new Triangle( vx, vy, vz, normal ) );
+
 			// per-face material
 			shapes[s].mesh.material_ids[f];
 		}
 	}
+
+	//primitives.push_back( new Triangle( vec3( 3, 0, 0 ), vec3( 0, 0, 0 ), vec3( 0, 3, 1 ), vec3( 1.f, .2f, .2f ) ) );
 }
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio( aspectRatio )
@@ -607,18 +624,17 @@ bool Tmpl8::Triangle::Intersect( Ray &ray, Intersection &intersection )
 	vec3 v2v0 = v2 - v0;
 	vec3 rov0 = ray.origin - v0;
 
-	vec3 n = cross( v1v0, v2v0 );
 	vec3 q = cross( rov0, ray.direction );
-	float d = 1.0 / dot( ray.direction, n );
+	float d = 1.0 / dot( ray.direction, normal );
 	float u = d * dot( -q, v2v0 );
 	float v = d * dot( q, v1v0 );
-	float t = d * dot( -n, rov0 );
+	float t = d * dot( -normal, rov0 );
 
 	if ( u < 0.0 || u > 1.0 || v < 0.0 || ( u + v ) > 1.0 || t < 0 )
 		return false;
 
 	intersection.t = t;
-	intersection.normal = normal;
+	intersection.normal = -normal;
 	intersection.position = ray.origin + ray.direction * t;
 	intersection.primitive = this;
 
