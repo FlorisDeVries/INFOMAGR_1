@@ -1,8 +1,8 @@
 #pragma once
-#include <limits>
-#include <vector>
 #include <atomic>
+#include <limits>
 #include <tuple>
+#include <vector>
 
 #pragma region Settings
 #define EPSILON 0.001f
@@ -13,9 +13,12 @@
 
 #define ONRAILS false
 #define LIGHTINTENSITY 10.0f
-#define THREADS 8		// 8 threads might melt Windows
-#define TILES 1024		// Keep as a power of an even number
+#define THREADS 8  // 8 threads might melt Windows
+#define TILES 1024 // Keep as a power of an even number
 #pragma endregion
+
+#define MAXFLOAT std::numeric_limits<float>::max()
+#define MINFLOAT std::numeric_limits<float>::min()
 
 namespace Tmpl8
 {
@@ -44,6 +47,7 @@ class Primitive
 	float specularity, refractionIndex = 0.0f;
 	virtual bool Intersect( Ray &ray, Intersection &intersection ) = 0;
 	virtual vec3 GetColor( vec3 pos ) = 0;
+	virtual AABB GetBounds() = 0;
 
   protected:
 	Surface *texture;
@@ -56,6 +60,7 @@ class Sphere : public Primitive
 	Sphere( vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
+	AABB GetBounds() override;
 
   private:
 	vec3 position;
@@ -68,6 +73,7 @@ class Plane : public Primitive
 	Plane( vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 );
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
+	AABB GetBounds() override;
 
   private:
 	vec3 normal, UAxis, VAxis;
@@ -77,9 +83,10 @@ class Plane : public Primitive
 class Triangle : public Primitive
 {
   public:
-	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : v0(v0), v1(v1), v2(v2), normal(normal), Primitive(color, specularity, refractionIndex, absorptionColor, texture){};
+	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : v0( v0 ), v1( v1 ), v2( v2 ), normal( normal ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
+	AABB GetBounds() override;
 
   private:
 	vec3 normal, v0, v1, v2;
@@ -88,8 +95,8 @@ class Triangle : public Primitive
 class Camera
 {
   public:
-	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight);
-	Ray GetRay(int x, int y);
+	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight );
+	Ray GetRay( int x, int y );
 	std::tuple<int, std::vector<Ray>> GetNextRays();
 	vec3 position, direction, screenTopLeft;
 	float FOV, aspectRatio;
@@ -122,6 +129,30 @@ class PointLight : public Light
 	inline bool InLoS() override { return true; }
 };
 
+struct AABB
+{
+	vec3 min, max;
+};
+
+struct BVHNode
+{
+	AABB bounds;
+	bool isLeaf;
+	BVHNode *left, *right;
+	int first, count;
+	void Subdivide();
+};
+
+class BVH
+{
+	BVHNode root;
+	BVHNode *pool;
+	uint poolIdx;
+	uint *indices;
+	void ConstructBVH( std::vector<Primitive *> primitives );
+	AABB CalculateBounds( std::vector<Primitive *> primitives, int first, int count );
+};
+
 class Game
 {
   public:
@@ -140,7 +171,7 @@ class Game
 	void Tick( float deltaTime );
 	void ThreadedRays( int i );
 	void HandleInput();
-	bool ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0);
+	bool ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0 );
 	void MouseUp( int button )
 	{ /* implement if you want to detect mouse button presses */
 		if ( button == SDL_BUTTON_RIGHT )
