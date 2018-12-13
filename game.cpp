@@ -825,3 +825,48 @@ AABB Tmpl8::BVH::CalculateBounds( std::vector<Primitive *> primitives, int first
 	bounds.max = max;
 	return bounds;
 }
+
+void Tmpl8::BVHNode::Subdivide()
+{
+	if ( count < 3 ) return;
+	left = new BVHNode();
+	right = new BVHNode();
+	Partition();
+	left->Subdivide();
+	right->Subdivide();
+	isLeaf = false;
+}
+
+void Tmpl8::BVHNode::Partition()
+{
+	// Decide on optimal split plane
+	// For now: middle
+	vec3 middle = ( bounds.max + bounds.min ) * 0.5f;
+	vec3 boxSize = bounds.max - bounds.min;
+	vec3 planeNormal = 0;
+
+	/*float maxding = max( boxSize.x, max(boxSize.y, boxSize.z) ); // Floris was hier wel
+	if ( maxding == boxSize.x )
+	{
+		planeNormal = vec3( 1, 0, 0 );
+	}
+	else if (maxding == boxSize.y)
+	{
+		planeNormal = vec3( 0, 1, 0 );
+	}
+	else{
+		planeNormal = vec3( 0, 0, 1 );
+	}*/
+
+	if ( boxSize.x > boxSize.y )//Floris was hier niet
+		if ( boxSize.x > boxSize.z )
+			planeNormal = vec3( 1, 0, 0 );
+		else
+			planeNormal = vec3( 0, 0, 1 );
+	else if ( boxSize.y > boxSize.z )
+		planeNormal = vec3( 0, 1, 0 );
+	else
+		planeNormal = vec3( 0, 0, 1 );
+	float dist = dot( planeNormal, middle );
+
+}

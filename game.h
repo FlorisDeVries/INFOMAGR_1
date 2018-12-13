@@ -141,6 +141,7 @@ struct BVHNode
 	BVHNode *left, *right;
 	int first, count;
 	void Subdivide();
+	void Partition();
 };
 
 class BVH
