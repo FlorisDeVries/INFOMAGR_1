@@ -1,5 +1,5 @@
 #include "precomp.h" // include (only) this in every .cpp file
-//#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
+#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
 
 // -----------------------------------------------------------
@@ -16,6 +16,7 @@ void Game::Init()
 
 	const char *testCubePath = "assets/Obj/Test.obj";
 	const char *teapotPath = "assets/Obj/teapot.obj";
+	const char *bunnyPath = "assets/Obj/bunny.obj";
 
 	switch ( SCENE )
 	{
@@ -82,8 +83,13 @@ void Game::Init()
 		break;
 	case 4:
 		// A scene to show the obj loader working, not really interactive
-		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
-		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 3, -1, -2 ), .8f );
+		//ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
+		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 3, -1, -2 ), .8f );
+
+
+		ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), 0.f );
+
+		
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
 		break;
@@ -484,7 +490,7 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 			shapes[s].mesh.material_ids[f];
 		}
 	}
-	return;
+	return true;
 #endif // TINYOBJLOADER_IMPLEMENTATION
 	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 
@@ -814,6 +820,7 @@ void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
 	root.count = N;
 	root.bounds = root.CalculateBounds( primitives );
 	root.Subdivide(primitives);
+	printf("BVH DONE\n");
 }
 
 void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
@@ -829,17 +836,19 @@ void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
 
 void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 {
-	printf("Partitioning! First: %i, count: %i\n", first, count);
+	//printf("Partitioning! First: %i, count: %i\n", first, count);
 	uint axis = bounds.LongestAxis();
 	float center = bounds.Center(axis);
-	printf("Longest axis: %i; center: %f\n", axis, center);
+	//printf("Longest axis: %i; center: %f\n", axis, center);
+	//printf("Bounds axis extends: x %f y %f z %f\n", bounds.Extend(0), bounds.Extend(1), bounds.Extend(2));
+	//printf("Bounds values: bmax %f %f %f bmin %f %f %f\n", bounds.bmax3[0], bounds.bmax3[1], bounds.bmax3[2], bounds.bmin3[0], bounds.bmin3[1], bounds.bmin3[2]);
 
 	uint leftIndex = first, rightIndex = first + count - 1;
 
 	while (leftIndex < rightIndex) {
 		Primitive *p = primitives[leftIndex];
-		//printf("Triangle %i| Center: %f %f %f |\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2]);
-		if (p->GetCenter()[axis] < center) {
+		//printf("Triangle %i| Center: %f %f %f | bmax %f %f %f bmin %f %f %f\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2], p->GetBounds().bmax3[0], p->GetBounds().bmax3[1], p->GetBounds().bmax3[2], p->GetBounds().bmin3[0], p->GetBounds().bmin3[1], p->GetBounds().bmin3[2]);
+		if (p->GetCenter()[axis] <= center) {
 			leftIndex++;
 		}
 		else {
@@ -850,9 +859,16 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 	}
 
 	Primitive *p = primitives[rightIndex];
-	//printf("Triangle %i| Center: %f %f %f |\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2]);
-	if (p->GetCenter()[axis] < center) {
+	//printf("Triangle %i| Center: %f %f %f | bmax %f %f %f bmin %f %f %f\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2], p->GetBounds().bmax3[0], p->GetBounds().bmax3[1], p->GetBounds().bmax3[2], p->GetBounds().bmin3[0], p->GetBounds().bmin3[1], p->GetBounds().bmin3[2]);
+	if (p->GetCenter()[axis] <= center) {
 		leftIndex++;
+	}
+
+	if (leftIndex - first == 0) {
+		leftIndex++;
+	}
+	else if (first + count - leftIndex == 0) {
+		leftIndex--;
 	}
 
 	left->first = first;
@@ -862,7 +878,7 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 	left->bounds = left->CalculateBounds(primitives);
 	right->bounds = right->CalculateBounds(primitives);
 
-	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n", left->first, left->count, right->first, right->count);
+	//printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
 }
 
 aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
@@ -873,7 +889,7 @@ aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
 		bounds.Grow(primitives[i]->GetBounds());
 	}
 
-	printf("Found bounds. MinX %f, MinY %f, MinZ %f, MaxX %f, MaxY %f, MaxZ %f\n", bounds.bmin3.x, bounds.bmin3.y, bounds.bmin3.z, bounds.bmax3.x, bounds.bmax3.y, bounds.bmax3.z);
+	//printf("Found bounds. MinX %f, MinY %f, MinZ %f, MaxX %f, MaxY %f, MaxZ %f\n", bounds.bmin3.x, bounds.bmin3.y, bounds.bmin3.z, bounds.bmax3.x, bounds.bmax3.y, bounds.bmax3.z);
 
 	return bounds;
 }
