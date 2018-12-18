@@ -31,7 +31,7 @@ void Game::Init()
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
 		nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
-		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( -3, -1, 2 ), .0f );
+		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), .0f );
 		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
@@ -838,6 +838,7 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 
 	while (leftIndex < rightIndex) {
 		Primitive *p = primitives[leftIndex];
+		//printf("Triangle %i| Center: %f %f %f |\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2]);
 		if (p->GetCenter()[axis] < center) {
 			leftIndex++;
 		}
@@ -848,10 +849,16 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 		}
 	}
 
+	Primitive *p = primitives[rightIndex];
+	//printf("Triangle %i| Center: %f %f %f |\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2]);
+	if (p->GetCenter()[axis] < center) {
+		leftIndex++;
+	}
+
 	left->first = first;
 	left->count = leftIndex - first;
-	right->first = rightIndex;
-	right->count = first + count - rightIndex;
+	right->first = leftIndex;
+	right->count = first + count - leftIndex;
 	left->bounds = left->CalculateBounds(primitives);
 	right->bounds = right->CalculateBounds(primitives);
 
