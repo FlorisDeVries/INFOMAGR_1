@@ -1,5 +1,5 @@
 #include "precomp.h" // include (only) this in every .cpp file
-#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
+//#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
 
 // -----------------------------------------------------------
@@ -32,7 +32,7 @@ void Game::Init()
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
 		nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
-		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), .0f );
+		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), .0f );
 		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
@@ -84,10 +84,10 @@ void Game::Init()
 	case 4:
 		// A scene to show the obj loader working, not really interactive
 		//ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
-		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 3, -1, -2 ), .8f );
+		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
 
 
-		ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), 0.f );
+		//ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), 0.f );
 
 		
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
@@ -110,10 +110,47 @@ void Game::Shutdown()
 
 vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
 {
-	for ( auto p : primitives )
+	std::stack<BVHNode> bvhNodeStack;
+	bvhNodeStack.push(bvh.root);
+	uint depth = 0;
+	while (!bvhNodeStack.empty()) {
+		depth++;
+		//printf("Stack size: %i\n", bvhNodeStack.size());
+		BVHNode node = bvhNodeStack.top();
+		bvhNodeStack.pop();
+		//printf("New stack size: %i\n", bvhNodeStack.size());
+
+		float tmin = ray.AABBIntersect(node.bounds);
+		if (tmin > intersection.t || tmin < 0 || tmin == std::numeric_limits<float>::max()) continue;
+		if (node.isLeaf) {
+			//Intersect with primitives
+			for (int i = node.first; i < node.first + node.count; i++)
+			{
+				depth++;
+				primitives[i]->Intersect(ray, intersection);
+			}
+		}
+		else {
+			//Push child nodes to stack
+			BVHNode *nr = node.left;
+			BVHNode *fr = node.right;
+			if (ray.AABBIntersect(node.left->bounds) > ray.AABBIntersect(node.right->bounds)) {
+				bvhNodeStack.push(*node.left);
+				bvhNodeStack.push(*node.right);
+			}
+			else {
+				bvhNodeStack.push(*node.right);
+				bvhNodeStack.push(*node.left);
+			}
+		}
+	}
+	//return vec3(min((depth), 256u)/256.0f);
+
+	for ( auto p : nonBVHprimitives )
 	{
 		p->Intersect( ray, intersection );
 	}
+
 	if ( intersection.t < std::numeric_limits<float>::max() )
 	{ // Found some primitive
 		// Specularity
@@ -172,6 +209,12 @@ vec3 Tmpl8::Game::DirectIllumination( Ray &ray, Intersection &intersection )
 		{
 			obstructed = p->Intersect( shadowRay, shadowIntersect );
 			if ( obstructed )
+				break;
+		}
+		for (auto p : nonBVHprimitives)
+		{
+			obstructed = p->Intersect(shadowRay, shadowIntersect);
+			if (obstructed)
 				break;
 		}
 
@@ -278,8 +321,8 @@ void Game::Tick( float deltaTime )
 
 //Threaded rays using OpenMP
 #pragma omp parallel for num_threads( THREADS )
-	for ( int i = 0; i < THREADS; i++ ) ThreadedRays( i );
-
+	for (int i = 0; i < THREADS; i++) { ThreadedRays(i); };
+	printf("Frame %i done\n", frame);
 	HandleInput();
 }
 
@@ -322,6 +365,7 @@ void Game::ThreadedRays( int i )
 		for ( int i = 0; i < yHeight; i++ )
 			for ( int j = 0; j < xHeight; j++ )
 			{
+				//printf("Pixel for pointer %i\n", pointer);
 				vec3 color = Trace( rayVector[i * yHeight + j], MAX_DEPTH );
 
 				uint red = sqrt( min( 1.0f, color.x ) ) * 255.0f;
@@ -332,6 +376,7 @@ void Game::ThreadedRays( int i )
 				pointer += ( j + 1 ) % xHeight == 0 ? ( SCRWIDTH - xHeight + 1 ) : 1;
 			}
 	}
+	printf("Tile done!\n");
 }
 
 void Game::KeyUp( int key )
@@ -878,7 +923,7 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 	left->bounds = left->CalculateBounds(primitives);
 	right->bounds = right->CalculateBounds(primitives);
 
-	//printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
+	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
 }
 
 aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
@@ -892,4 +937,42 @@ aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
 	//printf("Found bounds. MinX %f, MinY %f, MinZ %f, MaxX %f, MaxY %f, MaxZ %f\n", bounds.bmin3.x, bounds.bmin3.y, bounds.bmin3.z, bounds.bmax3.x, bounds.bmax3.y, bounds.bmax3.z);
 
 	return bounds;
+}
+
+float Tmpl8::Ray::AABBIntersect(aabb aabb)
+{
+	float tmin = (aabb.bmin3.x - origin.x) / direction.x;
+	float tmax = (aabb.bmax3.x - origin.x) / direction.x;
+
+	if (tmin > tmax) swap(tmin, tmax);
+
+	float tymin = (aabb.bmin3.y - origin.y) / direction.y;
+	float tymax = (aabb.bmax3.y - origin.y) / direction.y;
+
+	if (tymin > tymax) swap(tymin, tymax);
+
+	if ((tmin > tymax) || (tymin > tmax))
+		return std::numeric_limits<float>::max();
+
+	if (tymin > tmin)
+		tmin = tymin;
+
+	if (tymax < tmax)
+		tmax = tymax;
+
+	float tzmin = (aabb.bmin3.z - origin.z) / direction.z;
+	float tzmax = (aabb.bmax3.z - origin.z) / direction.z;
+
+	if (tzmin > tzmax) swap(tzmin, tzmax);
+
+	if ((tmin > tzmax) || (tzmin > tmax))
+		return std::numeric_limits<float>::max();
+
+	if (tzmin > tmin)
+		tmin = tzmin;
+
+	if (tzmax < tmax)
+		tmax = tzmax;
+
+	return tmin;
 }

@@ -3,6 +3,7 @@
 #include <limits>
 #include <tuple>
 #include <vector>
+#include <stack>
 
 #pragma region Settings
 #define EPSILON 0.001f
@@ -27,6 +28,7 @@ class Ray
   public:
 	Ray( vec3 origin, vec3 direction ) : origin( origin ), direction( direction ){};
 	vec3 origin, direction;
+	float AABBIntersect(aabb aabb);
 };
 
 class Primitive;
@@ -136,7 +138,7 @@ class PointLight : public Light
 struct BVHNode
 {
 	aabb bounds;
-	bool isLeaf;
+	bool isLeaf = true;
 	BVHNode *left, *right;
 	int first, count;
 	void Subdivide(std::vector<Primitive *> primitives);
