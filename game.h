@@ -47,7 +47,8 @@ class Primitive
 	float specularity, refractionIndex = 0.0f;
 	virtual bool Intersect( Ray &ray, Intersection &intersection ) = 0;
 	virtual vec3 GetColor( vec3 pos ) = 0;
-	virtual AABB GetBounds() = 0;
+	virtual aabb GetBounds() = 0;
+	virtual vec3 GetCenter() = 0;
 
   protected:
 	Surface *texture;
@@ -60,7 +61,8 @@ class Sphere : public Primitive
 	Sphere( vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
-	AABB GetBounds() override;
+	aabb GetBounds() override;
+	vec3 GetCenter() override { return position; };
 
   private:
 	vec3 position;
@@ -73,7 +75,8 @@ class Plane : public Primitive
 	Plane( vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 );
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
-	AABB GetBounds() override;
+	aabb GetBounds() override;
+	vec3 GetCenter() override;
 
   private:
 	vec3 normal, UAxis, VAxis;
@@ -86,7 +89,8 @@ class Triangle : public Primitive
 	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : v0( v0 ), v1( v1 ), v2( v2 ), normal( normal ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
-	AABB GetBounds() override;
+	aabb GetBounds() override;
+	vec3 GetCenter() override;
 
   private:
 	vec3 normal, v0, v1, v2;
@@ -129,35 +133,32 @@ class PointLight : public Light
 	inline bool InLoS() override { return true; }
 };
 
-struct AABB
-{
-	vec3 min, max;
-};
-
 struct BVHNode
 {
-	AABB bounds;
+	aabb bounds;
 	bool isLeaf;
 	BVHNode *left, *right;
 	int first, count;
-	void Subdivide();
-	void Partition();
+	void Subdivide(std::vector<Primitive *> primitives);
+	void Partition(std::vector<Primitive *> primitives);
+	aabb CalculateBounds(std::vector<Primitive *> primitives);
 };
 
 class BVH
 {
+public:
 	BVHNode root;
 	BVHNode *pool;
 	uint poolIdx;
 	uint *indices;
 	void ConstructBVH( std::vector<Primitive *> primitives );
-	AABB CalculateBounds( std::vector<Primitive *> primitives, int first, int count );
 };
 
 class Game
 {
   public:
-	std::vector<Primitive *> primitives;
+	  std::vector<Primitive *> primitives;
+	  std::vector<Primitive *> nonBVHprimitives;
 	std::vector<Light *> lights;
 	Camera *cam;
 	bool mouseTurning;
@@ -204,6 +205,7 @@ class Game
 	void KeyDown( int key );
 
   private:
+	BVH bvh;
 	Surface *screen;
 	bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
 };

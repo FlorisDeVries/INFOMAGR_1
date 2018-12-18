@@ -28,10 +28,10 @@ void Game::Init()
 		primitives.push_back( new Sphere( vec3( -5, -1, 5 ), 1.5f, vec3( 1.f ), 1.f, .0f ) );
 		primitives.push_back( new Sphere( vec3( 18, 6, 15 ), 6.f, vec3( 1.f ), 0.f, .0f, 1, earth ) );
 
-		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
-		primitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
+		nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
-		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( -3, -1, 2 ), .0f );
+		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( -3, -1, 2 ), .0f );
 		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
@@ -49,12 +49,12 @@ void Game::Init()
 		primitives.push_back( new Sphere( vec3( -1, -6.5f, 4 ), 2.5f, vec3( 0.3f, 0.3f, 0.3f ), 0.0f, 0.0f, 1, eye ) );
 
 		//Box
-		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
-		primitives.push_back( new Plane( vec3( -1, 0, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f, 1, planeTexture ) );
-		primitives.push_back( new Plane( vec3( 0, 0, 1 ), 10, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 0.0f ) );
-		primitives.push_back( new Plane( vec3( 0, 0, -1 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
-		primitives.push_back( new Plane( vec3( 0, 1, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
-		primitives.push_back( new Plane( vec3( 1, 0, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f, 1, planeTexture ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, 0, 1 ), 10, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, 0, -1 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, 1, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 1, 0, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
 
 		//Lights
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, 8, 8 ) ) );
@@ -75,7 +75,7 @@ void Game::Init()
 		primitives.push_back( new Sphere( vec3( 5, -4.f, 1 ), 1.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
 		primitives.push_back( new Sphere( vec3( 7, -4.5f, 1 ), .5f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
 
-		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
 
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
@@ -84,12 +84,15 @@ void Game::Init()
 		// A scene to show the obj loader working, not really interactive
 		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
 		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 3, -1, -2 ), .8f );
-		primitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
 		break;
 	default:
 		break;
 	}
+
+	bvh = BVH();
+	bvh.ConstructBVH(primitives);
 }
 
 // -----------------------------------------------------------
@@ -691,12 +694,9 @@ vec3 Tmpl8::Sphere::GetColor( vec3 pos )
 	}
 }
 
-AABB Tmpl8::Sphere::GetBounds()
+aabb Tmpl8::Sphere::GetBounds()
 {
-	AABB bounds = AABB();
-	bounds.max = position + sqrtf( r2 );
-	bounds.min = position - sqrtf( r2 );
-	return bounds;
+	return aabb(position - sqrtf(r2), position + sqrtf(r2));
 }
 
 Tmpl8::Plane::Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor, Surface *texture ) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor, texture )
@@ -752,9 +752,14 @@ vec3 Tmpl8::Plane::GetColor( vec3 pos )
 	}
 }
 
-AABB Tmpl8::Plane::GetBounds()
+aabb Tmpl8::Plane::GetBounds()
 {
 	throw new logic_error( 0 );
+}
+
+vec3 Tmpl8::Plane::GetCenter()
+{
+	throw new logic_error(0);
 }
 
 bool Tmpl8::Triangle::Intersect( Ray &ray, Intersection &intersection )
@@ -784,18 +789,20 @@ vec3 Tmpl8::Triangle::GetColor( vec3 pos )
 	return color;
 }
 
-AABB Tmpl8::Triangle::GetBounds()
+aabb Tmpl8::Triangle::GetBounds()
 {
-	AABB bounds = AABB();
-	bounds.min = vec3::min( v2, vec3::min( v0, v1 ) );
-	bounds.max = vec3::max( v2, vec3::max( v0, v1 ) );
-	return bounds;
+	return aabb(vec3::min(v2, vec3::min(v0, v1)), vec3::max(v2, vec3::max(v0, v1)));
+}
+
+vec3 Tmpl8::Triangle::GetCenter()
+{
+	return (v0 + v1 + v2) * 0.33333f;
 }
 
 void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
 {
-	// create index array
-	uint N = primitives.size;
+	// create index array	
+	uint N = primitives.size();
 	indices = new uint[N];
 	for ( int i = 0; i < N; i++ ) indices[i] = i;
 	// allocate BVH root node
@@ -805,68 +812,61 @@ void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
 	// subdivide root node
 	root.first = 0;
 	root.count = N;
-	root.bounds = CalculateBounds( primitives, root.first, root.count );
-	root.Subdivide();
+	root.bounds = root.CalculateBounds( primitives );
+	root.Subdivide(primitives);
 }
 
-AABB Tmpl8::BVH::CalculateBounds( std::vector<Primitive *> primitives, int first, int count )
-{
-	vec3 min = MAXFLOAT, max = MINFLOAT;
-	AABB bounds;
-	for ( int i = first; i < first + count; i++ )
-	{
-		Primitive *p = primitives[i];
-		bounds = p->GetBounds();
-
-		min = vec3::min( min, bounds.min );
-		max = vec3::min( max, bounds.max );
-	}
-	bounds.min = min;
-	bounds.max = max;
-	return bounds;
-}
-
-void Tmpl8::BVHNode::Subdivide()
+void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
 {
 	if ( count < 3 ) return;
 	left = new BVHNode();
 	right = new BVHNode();
-	Partition();
-	left->Subdivide();
-	right->Subdivide();
+	Partition(primitives);
+	left->Subdivide(primitives);
+	right->Subdivide(primitives);
 	isLeaf = false;
 }
 
-void Tmpl8::BVHNode::Partition()
+void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 {
-	// Decide on optimal split plane
-	// For now: middle
-	vec3 middle = ( bounds.max + bounds.min ) * 0.5f;
-	vec3 boxSize = bounds.max - bounds.min;
-	vec3 planeNormal = 0;
+	printf("Partitioning! First: %i, count: %i\n", first, count);
+	uint axis = bounds.LongestAxis();
+	float center = bounds.Center(axis);
+	printf("Longest axis: %i; center: %f\n", axis, center);
 
-	/*float maxding = max( boxSize.x, max(boxSize.y, boxSize.z) ); // Floris was hier wel
-	if ( maxding == boxSize.x )
-	{
-		planeNormal = vec3( 1, 0, 0 );
+	uint leftIndex = first, rightIndex = first + count - 1;
+
+	while (leftIndex < rightIndex) {
+		Primitive *p = primitives[leftIndex];
+		if (p->GetCenter()[axis] < center) {
+			leftIndex++;
+		}
+		else {
+			//in-place swap
+			swap(primitives[leftIndex], primitives[rightIndex]);
+			rightIndex--;
+		}
 	}
-	else if (maxding == boxSize.y)
+
+	left->first = first;
+	left->count = leftIndex - first;
+	right->first = rightIndex;
+	right->count = first + count - rightIndex;
+	left->bounds = left->CalculateBounds(primitives);
+	right->bounds = right->CalculateBounds(primitives);
+
+	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n", left->first, left->count, right->first, right->count);
+}
+
+aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
+{
+	aabb bounds = primitives[first]->GetBounds();
+	for (int i = first + 1; i < first + count; i++)
 	{
-		planeNormal = vec3( 0, 1, 0 );
+		bounds.Grow(primitives[i]->GetBounds());
 	}
-	else{
-		planeNormal = vec3( 0, 0, 1 );
-	}*/
 
-	if ( boxSize.x > boxSize.y )//Floris was hier niet
-		if ( boxSize.x > boxSize.z )
-			planeNormal = vec3( 1, 0, 0 );
-		else
-			planeNormal = vec3( 0, 0, 1 );
-	else if ( boxSize.y > boxSize.z )
-		planeNormal = vec3( 0, 1, 0 );
-	else
-		planeNormal = vec3( 0, 0, 1 );
-	float dist = dot( planeNormal, middle );
+	printf("Found bounds. MinX %f, MinY %f, MinZ %f, MaxX %f, MaxY %f, MaxZ %f\n", bounds.bmin3.x, bounds.bmin3.y, bounds.bmin3.z, bounds.bmax3.x, bounds.bmax3.y, bounds.bmax3.z);
 
+	return bounds;
 }
