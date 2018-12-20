@@ -2,6 +2,8 @@
 //#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
 
+#define USE_BVH 1
+
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
@@ -83,11 +85,11 @@ void Game::Init()
 		break;
 	case 4:
 		// A scene to show the obj loader working, not really interactive
-		//ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
+		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
 		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
 
 
-		ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0, 0, -7 ), 0.f );
+		//ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0, 0, -7 ), 0.f );
 
 		
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
@@ -132,7 +134,7 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 	std::stack<BVHNode> bvhNodeStack;
 	bvhNodeStack.push(bvh.root);
 	uint depth = 0;
-
+#ifdef USE_BVH
 	while (!bvhNodeStack.empty()) {
 		depth++;
 		//printf("Stack size: %i\n", bvhNodeStack.size());
@@ -162,13 +164,22 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 				bvhNodeStack.push(*node.left);
 			}
 		}
-	}
-	//return vec3(min((depth), 256u)/256.0f);
+}
+	return vec3(min((depth / 10), 256u)/256.0f);
+#else
 
-	for ( auto p : nonBVHprimitives )
+	for (auto p : primitives)
 	{
-		p->Intersect( ray, intersection );
+		p->Intersect(ray, intersection);
+	}	
+#endif
+	
+	for (auto p : nonBVHprimitives)
+	{
+		p->Intersect(ray, intersection);
 	}
+
+	
 
 	if (shadowRay) {
 		return 0;
@@ -319,6 +330,8 @@ static int frame = 0;
 // -----------------------------------------------------------
 void Game::Tick( float deltaTime )
 {
+	timer t = timer();
+	t.reset();
 	// Clear the graphics window
 	screen->Clear( 0 );
 	frame++;
@@ -340,6 +353,8 @@ void Game::Tick( float deltaTime )
 	for (int i = 0; i < THREADS; i++) { ThreadedRays(i); };
 	//printf("Frame %i done\n", frame);
 	HandleInput();
+
+	printf("Frametime (s): %f\n", t.elapsed()/1000.0f);
 }
 
 void Game::ThreadedRays( int i )
