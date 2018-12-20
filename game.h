@@ -168,7 +168,7 @@ class Game
 	void SetTarget( Surface *surface ) { screen = surface; }
 	void Init();
 	void Shutdown();
-	vec3 Trace( Ray ray, int recursionDepth, Intersection &intersection = Intersection() );
+	vec3 Trace( Ray ray, int recursionDepth, Intersection &intersection = Intersection(), bool shadowRay = false);
 	Ray Reflect( Ray &ray, Intersection &intersection );
 	vec3 DirectIllumination( Ray &ray, Intersection &intersection );
 	vec3 Refract( Ray &ray, Intersection &intersection, int recursionDepth );

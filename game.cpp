@@ -84,10 +84,10 @@ void Game::Init()
 	case 4:
 		// A scene to show the obj loader working, not really interactive
 		//ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
-		ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
+		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
 
 
-		//ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), 0.f );
+		ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0, 0, -7 ), 0.f );
 
 		
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
@@ -99,6 +99,25 @@ void Game::Init()
 
 	bvh = BVH();
 	bvh.ConstructBVH(primitives);
+
+	/*std::stack<BVHNode> bvhNodes;
+	bvhNodes.push(bvh.root);
+	while (!bvhNodes.empty()) {
+		BVHNode node = bvhNodes.top();
+		bvhNodes.pop();
+		printf("Bounding box size: %f %f %f\n", node.bounds.bmax3.x - node.bounds.bmin3.x, node.bounds.bmax3.y - node.bounds.bmin3.y, node.bounds.bmax3.z - node.bounds.bmin3.z);
+		if (node.isLeaf) {
+			printf("Child count: %i | First: %i \n", node.count, node.first);
+			for (int i = node.first; i < node.first + node.count; i++)
+			{
+				printf("Child center: %f %f %f\n", primitives[i]->GetCenter().x, primitives[i]->GetCenter().y, primitives[i]->GetCenter().z);
+			}
+		}
+		else {
+			bvhNodes.push(*node.left);
+			bvhNodes.push(*node.right);
+		}
+	}*/
 }
 
 // -----------------------------------------------------------
@@ -108,11 +127,12 @@ void Game::Shutdown()
 {
 }
 
-vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
+vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool shadowRay )
 {
 	std::stack<BVHNode> bvhNodeStack;
 	bvhNodeStack.push(bvh.root);
 	uint depth = 0;
+
 	while (!bvhNodeStack.empty()) {
 		depth++;
 		//printf("Stack size: %i\n", bvhNodeStack.size());
@@ -122,6 +142,7 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
 
 		float tmin = ray.AABBIntersect(node.bounds);
 		if (tmin > intersection.t || tmin < 0 || tmin == std::numeric_limits<float>::max()) continue;
+		//printf("SHOULD NOT COME HERE\n");
 		if (node.isLeaf) {
 			//Intersect with primitives
 			for (int i = node.first; i < node.first + node.count; i++)
@@ -132,8 +153,6 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
 		}
 		else {
 			//Push child nodes to stack
-			BVHNode *nr = node.left;
-			BVHNode *fr = node.right;
 			if (ray.AABBIntersect(node.left->bounds) > ray.AABBIntersect(node.right->bounds)) {
 				bvhNodeStack.push(*node.left);
 				bvhNodeStack.push(*node.right);
@@ -151,9 +170,14 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
 		p->Intersect( ray, intersection );
 	}
 
+	if (shadowRay) {
+		return 0;
+	}
+
 	if ( intersection.t < std::numeric_limits<float>::max() )
 	{ // Found some primitive
 		// Specularity
+		//printf("SHOULD NOT COME HERE 2.0\n");
 		if ( intersection.primitive->specularity > 0 && recursionDepth > 0 )
 		{
 			Ray reflectRay = Reflect( ray, intersection );
@@ -174,7 +198,8 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection )
 		}
 	}
 	else
-	{																								// Missed all primitives
+	{
+																					// Missed all primitives
 		return vec3( ( 6.0f * 16 + 4 ) / 256, ( 16.0f * 9 + 5 ) / 256, ( 16.0f * 14 + 13 ) / 256 ); // Cornflower blue
 	}
 }
@@ -205,20 +230,11 @@ vec3 Tmpl8::Game::DirectIllumination( Ray &ray, Intersection &intersection )
 		bool obstructed = false;
 		Intersection shadowIntersect;
 		shadowIntersect.t = ( l->position - origin ).length() - 2 * EPSILON;
-		for ( auto p : primitives )
-		{
-			obstructed = p->Intersect( shadowRay, shadowIntersect );
-			if ( obstructed )
-				break;
-		}
-		for (auto p : nonBVHprimitives)
-		{
-			obstructed = p->Intersect(shadowRay, shadowIntersect);
-			if (obstructed)
-				break;
-		}
+		float t = shadowIntersect.t;
 
-		if ( obstructed )
+		Trace(shadowRay, 0, shadowIntersect, true);		
+
+		if ( shadowIntersect.t < t)
 			continue;
 
 		// Get and combine color
@@ -322,7 +338,7 @@ void Game::Tick( float deltaTime )
 //Threaded rays using OpenMP
 #pragma omp parallel for num_threads( THREADS )
 	for (int i = 0; i < THREADS; i++) { ThreadedRays(i); };
-	printf("Frame %i done\n", frame);
+	//printf("Frame %i done\n", frame);
 	HandleInput();
 }
 
@@ -376,7 +392,7 @@ void Game::ThreadedRays( int i )
 				pointer += ( j + 1 ) % xHeight == 0 ? ( SCRWIDTH - xHeight + 1 ) : 1;
 			}
 	}
-	printf("Tile done!\n");
+	//	printf("Tile done!\n");
 }
 
 void Game::KeyUp( int key )
@@ -870,12 +886,20 @@ void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
 
 void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
 {
-	if ( count < 3 ) return;
+	if (count < 3) {
+		bounds = aabb(vec3(std::numeric_limits<float>::max()), vec3(std::numeric_limits<float>::min()));
+		for (int i = first; i < first + count; i++)
+		{
+			bounds = aabb(vec3::min(bounds.bmin3, primitives[i]->GetBounds().bmin3), vec3::max(bounds.bmax3, primitives[i]->GetBounds().bmax3));
+		}
+		return;
+	}
 	left = new BVHNode();
 	right = new BVHNode();
 	Partition(primitives);
 	left->Subdivide(primitives);
 	right->Subdivide(primitives);
+	bounds = aabb(vec3::min(left->bounds.bmin3, right->bounds.bmin3), vec3::max(left->bounds.bmax3, right->bounds.bmax3));
 	isLeaf = false;
 }
 
@@ -895,8 +919,7 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 		//printf("Triangle %i| Center: %f %f %f | bmax %f %f %f bmin %f %f %f\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2], p->GetBounds().bmax3[0], p->GetBounds().bmax3[1], p->GetBounds().bmax3[2], p->GetBounds().bmin3[0], p->GetBounds().bmin3[1], p->GetBounds().bmin3[2]);
 		if (p->GetCenter()[axis] <= center) {
 			leftIndex++;
-		}
-		else {
+		} else {
 			//in-place swap
 			swap(primitives[leftIndex], primitives[rightIndex]);
 			rightIndex--;
@@ -909,6 +932,7 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 		leftIndex++;
 	}
 
+	//Ugly check
 	if (leftIndex - first == 0) {
 		leftIndex++;
 	}
@@ -920,8 +944,8 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 	left->count = leftIndex - first;
 	right->first = leftIndex;
 	right->count = first + count - leftIndex;
-	left->bounds = left->CalculateBounds(primitives);
-	right->bounds = right->CalculateBounds(primitives);
+	//left->bounds = left->CalculateBounds(primitives);
+	//right->bounds = right->CalculateBounds(primitives);
 
 	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
 }
