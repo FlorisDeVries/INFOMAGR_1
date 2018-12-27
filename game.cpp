@@ -955,12 +955,13 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	float bestSplitScore = MAXFLOAT;
 
 	// Get the current cost of the node bounds
-	bounds = aabb(MAXFLOAT, MINFLOAT);
-	bounds.Reset();
+	bounds = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+	//bounds.Reset();
 	for (int i = first; i < first + count; i++)
 	{
-		bounds.bmin3 = vec3::min(bounds.bmin3, primitives[0][i]->GetBounds().bmin3);
-		bounds.bmax3 = vec3::max(bounds.bmax3, primitives[0][i]->GetBounds().bmax3);
+		//bounds.bmin3 = vec3::min(bounds.bmin3, primitives[0][i]->GetBounds().bmin3);
+		//bounds.bmax3 = vec3::max(bounds.bmax3, primitives[0][i]->GetBounds().bmax3);
+		bounds.Grow(primitives[0][i]->GetBounds());
 	}
 	float currentSplitScore = count * bounds.Area();
 
@@ -970,28 +971,87 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 		// Sort
 		std::sort(primitives->begin() + first, primitives->begin() + first + count, std::bind(sortByAxis, std::placeholders::_1, std::placeholders::_2, i));
 		
-		// AABB's
-		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
-		aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
 
 		// Iterate
-		for (int j = first + count - 1; j >= first; j--)
+		float interval = bounds.Extend(i) / min(100.0f, (float)count);
+		aabb* bins = new aabb[min(count, 100)];
+		for (int j = 0; j < min(count, 100); j++)
+		{
+			bins[j].Reset();
+		}
+
+		int* binCounts = new int[min(count, 100) + 1];
+		int counter = first;
+		for (int j = 0; j < min(100, count); j++)
+		{
+			float max = (j + 1) * interval;
+			for (int k = counter; k < first + count; k++)
+			{
+				if (primitives[0][k]->GetCenter()[i] > max) {
+					counter = k;
+					for (int l = j; l < min(100, count); l++)
+					{
+						binCounts[l] += binCounts[j];
+					}
+					break;
+				}
+				bins[j].bmin3 = vec3::min(bins[j].bmin3, primitives[0][k]->GetBounds().bmin3);
+				bins[j].bmax3 = vec3::max(bins[j].bmax3, primitives[0][k]->GetBounds().bmax3);
+				binCounts[j]++;
+			}
+		}
+		binCounts[min(100, count) + 1] = count;
+
+		// AABB's for bins
+		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+		aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+		right.Reset();
+
+		for (int j = min(100, count) - 1; j >= 0; j--)
 		{
 			left.Reset();
-			for (int k = first; k < j; k++)
+			for (int k = 0; k < j; k++)
 			{
-				left.Grow(primitives[0][k]->GetBounds());
+				//left.Grow(bins[k]);
+				left.bmin3 = vec3::min(bins[k].bmin3, left.bmin3);
+				left.bmax3 = vec3::max(bins[k].bmax3, left.bmax3);
+
 			}
-			right.Grow(primitives[0][j]->GetBounds());
+			//right.Grow(bins[j]);
+
+			right.bmin3 = vec3::min(bins[j].bmin3, right.bmin3);
+			right.bmax3 = vec3::max(bins[j].bmax3, right.bmax3);
 
 			// Keep track
-			float SAHScore = left.Area() * (j - first) + right.Area() * (first + count - j);
+			float SAHScore = left.Area() * binCounts[j] + right.Area() * binCounts[j + 1];
 			if (SAHScore < bestSplitScore) {
 				bestSplitAxis = i;
 				bestSplitPosition = primitives[0][j]->GetCenter()[i];
 				bestSplitScore = SAHScore;
 			}
 		}
+
+		//// AABB's
+		//aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+		//aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+
+		//for (int j = first + count - 1; j >= first; j--)
+		//{
+		//	left.Reset();
+		//	for (int k = first; k < j; k++)
+		//	{
+		//		left.Grow(primitives[0][k]->GetBounds());
+		//	}
+		//	right.Grow(primitives[0][j]->GetBounds());
+
+		//	// Keep track
+		//	float SAHScore = left.Area() * (j - first) + right.Area() * (first + count - j);
+		//	if (SAHScore < bestSplitScore) {
+		//		bestSplitAxis = i;
+		//		bestSplitPosition = primitives[0][j]->GetCenter()[i];
+		//		bestSplitScore = SAHScore;
+		//	}
+		//}
 	}
 
 	// Check if splitting makes sense
@@ -1029,6 +1089,7 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	right->first = leftIndex;
 	right->count = first + count - leftIndex;
 
+	// Debug print
 	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
 	return true;
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <stack>
 #include <functional>
+#include <numeric>
 
 #pragma region Settings
 #define EPSILON 0.001f
