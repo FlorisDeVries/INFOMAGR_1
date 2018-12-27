@@ -956,7 +956,7 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 
 	// Get the current cost of the node bounds
 	bounds = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
-	//bounds.Reset();
+	bounds.Reset();
 	for (int i = first; i < first + count; i++)
 	{
 		//bounds.bmin3 = vec3::min(bounds.bmin3, primitives[0][i]->GetBounds().bmin3);
@@ -995,12 +995,13 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 					}
 					break;
 				}
-				bins[j].bmin3 = vec3::min(bins[j].bmin3, primitives[0][k]->GetBounds().bmin3);
-				bins[j].bmax3 = vec3::max(bins[j].bmax3, primitives[0][k]->GetBounds().bmax3);
+				bins[j].Grow(primitives[0][k]->GetBounds());
+				//bins[j].bmin3 = vec3::min(bins[j].bmin3, primitives[0][k]->GetBounds().bmin3);
+				//bins[j].bmax3 = vec3::max(bins[j].bmax3, primitives[0][k]->GetBounds().bmax3);
 				binCounts[j]++;
 			}
 		}
-		binCounts[min(100, count) + 1] = count;
+		binCounts[min(100, count)] = count;
 
 		// AABB's for bins
 		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
@@ -1030,11 +1031,7 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 				bestSplitScore = SAHScore;
 			}
 		}
-
-		//// AABB's
-		//aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
-		//aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
-
+		
 		//for (int j = first + count - 1; j >= first; j--)
 		//{
 		//	left.Reset();
