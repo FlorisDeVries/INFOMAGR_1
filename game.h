@@ -4,11 +4,12 @@
 #include <tuple>
 #include <vector>
 #include <stack>
+#include <functional>
 
 #pragma region Settings
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
-#define SCENE 4
+#define SCENE 5
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
@@ -18,8 +19,8 @@
 #define TILES 1024 // Keep as a power of an even number
 #pragma endregion
 
-#define MAXFLOAT std::numeric_limits<float>::max()
-#define MINFLOAT std::numeric_limits<float>::min()
+#define MAXFLOAT 1e34f //std::numeric_limits<float>::max()
+#define MINFLOAT -1e34f //std::numeric_limits<float>::min()
 
 namespace Tmpl8
 {

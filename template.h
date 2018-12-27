@@ -126,7 +126,8 @@ public:
 		return vec3( y * operand.z - z * operand.y, z * operand.x - x * operand.z, x * operand.y - y * operand.x );
 	}
 	float dot( const vec3& operand ) const { return x * operand.x + y * operand.y + z * operand.z; }
-	static vec3 min( vec3 v1, vec3 v2) {
+	static vec3 min( vec3 v1, vec3 v2)
+	{
 		return vec3( ::min( v1.x, v2.x ), ::min( v1.y, v2.y ), ::min( v1.z, v2.z ) );
 	}
 	static vec3 max( vec3 v1, vec3 v2 )

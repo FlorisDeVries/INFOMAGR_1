@@ -95,6 +95,19 @@ void Game::Init()
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
 		break;
+	case 5:
+		// SAH-testing scene
+		primitives.push_back(new Sphere(vec3(-30, 0, -3), 0.5f, vec3(1.f, .1f, .1f)));
+		primitives.push_back(new Sphere(vec3(-31, 0, -2), 0.5f, vec3(1.f, .1f, .1f)));
+		primitives.push_back(new Sphere(vec3(-30, 0, -2), 0.5f, vec3(1.f, .1f, .1f)));
+		primitives.push_back(new Sphere(vec3(-31, 0, -3), 0.5f, vec3(1.f, .1f, .1f)));
+
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 2), 1.f, vec3(.1f, 1.f, .1f)));
+
+		primitives.push_back(new Sphere(vec3(3, 0, 2), 2.f, vec3(.1f, .1f, 1.f)));
+
+		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
+		break;
 	default:
 		break;
 	}
@@ -165,7 +178,7 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 			}
 		}
 }
-	return vec3(min((depth / 10), 256u)/256.0f);
+	return vec3(min((depth * 10), 256u)/256.0f);
 #else
 
 	for (auto p : primitives)
@@ -896,19 +909,38 @@ void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
 	root.count = N;
 	root.bounds = root.CalculateBounds( primitives );
 	root.Subdivide(primitives);
+
+	for (int i = 0; i < primitives.size(); i++)
+	{
+		printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
+	}
+
 	printf("BVH DONE\n");
 }
 
 void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
 {
 	if (count < 3) {
-		bounds = aabb(vec3(std::numeric_limits<float>::max()), vec3(std::numeric_limits<float>::min()));
+
+
 		for (int i = first; i < first + count; i++)
 		{
-			bounds = aabb(vec3::min(bounds.bmin3, primitives[i]->GetBounds().bmin3), vec3::max(bounds.bmax3, primitives[i]->GetBounds().bmax3));
+			printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
 		}
+
+		bounds = aabb(MAXFLOAT, MINFLOAT);
+		bounds.Reset();
+		for (int i = first; i < first + count; i++)
+		{
+			bounds.bmin3 = vec3::min(bounds.bmin3, primitives[i]->GetBounds().bmin3);
+			bounds.bmax3 = vec3::max(bounds.bmax3, primitives[i]->GetBounds().bmax3);
+			printf("Primitive position in this leaf: %f %f %f\n", primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
+			//bounds.Grow(primitives[i]->GetBounds());
+		}
+		printf("Bounds center: %f %f %f\n", bounds.Center(0), bounds.Center(1), bounds.Center(2));
 		return;
 	}
+
 	left = new BVHNode();
 	right = new BVHNode();
 	Partition(primitives);
@@ -916,6 +948,10 @@ void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
 	right->Subdivide(primitives);
 	bounds = aabb(vec3::min(left->bounds.bmin3, right->bounds.bmin3), vec3::max(left->bounds.bmax3, right->bounds.bmax3));
 	isLeaf = false;
+}
+
+bool sortByAxis(Primitive* prim1, Primitive* prim2, int axis) {
+	return prim1->GetCenter()[axis] > prim2->GetCenter()[axis];
 }
 
 void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
@@ -927,7 +963,57 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 	//printf("Bounds axis extends: x %f y %f z %f\n", bounds.Extend(0), bounds.Extend(1), bounds.Extend(2));
 	//printf("Bounds values: bmax %f %f %f bmin %f %f %f\n", bounds.bmax3[0], bounds.bmax3[1], bounds.bmax3[2], bounds.bmin3[0], bounds.bmin3[1], bounds.bmin3[2]);
 
+	//now, with SAH!
+
+	// 1. Pick an axis
+	// 2. Sort all the primitives in the current node on axis coordinate
+	// 3. Create two AABB's
+	// 4. Iteratively put the primitives in the left/right box
+	// 5. Keep track of lowest split cost
+	// 6. Repeat for other axes
+
+	int bestSplitAxis = 0;
+	float bestSplitPosition = 0;
+	float bestSplitScore = MAXFLOAT;
+
+	timer tim = timer();
+	tim.reset();
+	for (int i = 0; i < 3; i++)
+	{
+		// Sort
+		std::sort(primitives.begin() + first, primitives.begin() + first + count, std::bind(sortByAxis, std::placeholders::_1, std::placeholders::_2, i));
+		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+		aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+
+		for (int j = first + count - 1; j >= first; j--)
+		{
+			left.Reset();
+			for (int k = first; k < j; k++)
+			{
+				left.Grow(primitives[k]->GetBounds());
+			}
+			//printf("i: %f j: %f\n", i, j);
+			right.Grow(primitives[j]->GetBounds());
+
+			float SAHScore = left.Area() + right.Area();
+			if (SAHScore < bestSplitScore) {
+				bestSplitAxis = i;
+				bestSplitPosition = primitives[j]->GetCenter()[i];
+				bestSplitScore = SAHScore;
+			}
+		}
+	}
+	printf("Timer time for SAH: %f. Final SAH score: %f. Best axis: %i Best position: %f\n", tim.elapsed(), bestSplitScore, bestSplitAxis, bestSplitPosition);
+
+	axis = bestSplitAxis;
+	center = bestSplitPosition;
+
 	uint leftIndex = first, rightIndex = first + count - 1;
+
+	for (int i = first; i < first + count; i++)
+	{
+		printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
+	}
 
 	while (leftIndex < rightIndex) {
 		Primitive *p = primitives[leftIndex];
@@ -955,6 +1041,11 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 		leftIndex--;
 	}
 
+	for (int i = first; i < first + count; i++)
+	{
+		printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
+	}
+
 	left->first = first;
 	left->count = leftIndex - first;
 	right->first = leftIndex;
@@ -967,8 +1058,8 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 
 aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
 {
-	aabb bounds = primitives[first]->GetBounds();
-	for (int i = first + 1; i < first + count; i++)
+	aabb bounds = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
+	for (int i = first; i < first + count; i++)
 	{
 		bounds.Grow(primitives[i]->GetBounds());
 	}
