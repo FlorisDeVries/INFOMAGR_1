@@ -87,7 +87,7 @@ void Game::Init()
 		// A scene to show the obj loader working, not really interactive
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 0));
 
-		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 7 ) );
+		//ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 7 ) );
 		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
 
 
@@ -938,7 +938,7 @@ void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> * primitives)
 
 // Sort primitives for a given axis
 bool sortByAxis(Primitive* prim1, Primitive* prim2, int axis) {
-	return prim1->GetCenter()[axis] > prim2->GetCenter()[axis];
+	return prim1->GetCenter()[axis] < prim2->GetCenter()[axis];
 }
 
 bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
@@ -970,38 +970,44 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	{
 		// Sort
 		std::sort(primitives->begin() + first, primitives->begin() + first + count, std::bind(sortByAxis, std::placeholders::_1, std::placeholders::_2, i));
+		for (int j = 0; j < 100; j++)
+		{
+			//printf("Center: %f\n", primitives[0][j]->GetCenter()[i]);
+		}
 		
-
 		// Iterate
 		float interval = bounds.Extend(i) / min(100.0f, (float)count);
 		aabb* bins = new aabb[min(count, 100)];
-		for (int j = 0; j < min(count, 100); j++)
-		{
-			bins[j].Reset();
-		}
 
-		int* binCounts = new int[min(count, 100) + 1];
+		int* binCounts = new int[min(count, 100) + 1]{0};
 		int counter = first;
 		for (int j = 0; j < min(100, count); j++)
 		{
-			float max = (j + 1) * interval;
+			bins[j].Reset();
+			float max = (j + 1) * interval + bounds.bmin[i];
 			for (int k = counter; k < first + count; k++)
 			{
 				if (primitives[0][k]->GetCenter()[i] > max) {
 					counter = k;
 					for (int l = j; l < min(100, count); l++)
 					{
-						binCounts[l] += binCounts[j];
+						binCounts[l] = binCounts[j];
 					}
+					//printf("For bin %i, stopped at primitive %i due to center %f being larger than max %f\n", j, k, primitives[0][k]->GetCenter()[i], max);
 					break;
 				}
-				bins[j].Grow(primitives[0][k]->GetBounds());
-				//bins[j].bmin3 = vec3::min(bins[j].bmin3, primitives[0][k]->GetBounds().bmin3);
-				//bins[j].bmax3 = vec3::max(bins[j].bmax3, primitives[0][k]->GetBounds().bmax3);
+				//bins[j].Grow(primitives[0][k]->GetBounds());
+				bins[j].bmin3 = vec3::min(bins[j].bmin3, primitives[0][k]->GetBounds().bmin3);
+				bins[j].bmax3 = vec3::max(bins[j].bmax3, primitives[0][k]->GetBounds().bmax3);
 				binCounts[j]++;
 			}
 		}
 		binCounts[min(100, count)] = count;
+
+		for (int j = 0; j < min(100, count) + 1; j++)
+		{
+			//printf("Bincount at bin %i: %i\n", j, binCounts[j]);
+		}
 
 		// AABB's for bins
 		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
@@ -1024,10 +1030,11 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 			right.bmax3 = vec3::max(bins[j].bmax3, right.bmax3);
 
 			// Keep track
-			float SAHScore = left.Area() * binCounts[j] + right.Area() * binCounts[j + 1];
+			float SAHScore = left.Area() * binCounts[j] + right.Area() * (binCounts[min(100, count)] - binCounts[j]);
+			//printf("SAHScore: %f. LeftA: %f, RightA %f, LeftCount %i, RightCount %i, splitpos: lalala\n", SAHScore, left.Area(), right.Area(), binCounts[j], (binCounts[min(100, count)] - binCounts[j]), 0.1f);
 			if (SAHScore < bestSplitScore) {
 				bestSplitAxis = i;
-				bestSplitPosition = primitives[0][j]->GetCenter()[i];
+				bestSplitPosition = primitives[0][first + binCounts[j] - 1]->GetCenter()[i];
 				bestSplitScore = SAHScore;
 			}
 		}
@@ -1054,6 +1061,7 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	// Check if splitting makes sense
 	if (bestSplitScore >= currentSplitScore) return false;
 
+	printf("Final SAH score: %f. Best axis: %i Best position: %f\n", bestSplitScore, bestSplitAxis, bestSplitPosition);
 	// Partition sort the primitives based on the found split
 	uint leftIndex = first, rightIndex = first + count - 1;
 
