@@ -85,7 +85,9 @@ void Game::Init()
 		break;
 	case 4:
 		// A scene to show the obj loader working, not really interactive
-		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 0 ) );
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 0));
+
+		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 7 ) );
 		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
 
 
@@ -104,6 +106,15 @@ void Game::Init()
 
 		primitives.push_back(new Sphere(vec3(-14.7f, 0, 2), 1.f, vec3(.1f, 1.f, .1f)));
 
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
+
 		primitives.push_back(new Sphere(vec3(3, 0, 2), 2.f, vec3(.1f, .1f, 1.f)));
 
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
@@ -113,7 +124,7 @@ void Game::Init()
 	}
 
 	bvh = BVH();
-	bvh.ConstructBVH(primitives);
+	bvh.ConstructBVH(&primitives);
 
 	/*std::stack<BVHNode> bvhNodes;
 	bvhNodes.push(bvh.root);
@@ -178,7 +189,7 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 			}
 		}
 }
-	return vec3(min((depth * 10), 256u)/256.0f);
+//	return vec3(min((depth * 10), 256u)/256.0f);
 #else
 
 	for (auto p : primitives)
@@ -894,10 +905,10 @@ vec3 Tmpl8::Triangle::GetCenter()
 	return (v0 + v1 + v2) * 0.33333f;
 }
 
-void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
+void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> * primitives )
 {
 	// create index array	
-	uint N = primitives.size();
+	uint N = primitives->size();
 	indices = new uint[N];
 	for ( int i = 0; i < N; i++ ) indices[i] = i;
 	// allocate BVH root node
@@ -907,64 +918,31 @@ void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> primitives )
 	// subdivide root node
 	root.first = 0;
 	root.count = N;
-	root.bounds = root.CalculateBounds( primitives );
 	root.Subdivide(primitives);
-
-	for (int i = 0; i < primitives.size(); i++)
-	{
-		printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
-	}
 
 	printf("BVH DONE\n");
 }
 
-void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> primitives)
+void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> * primitives)
 {
-	if (count < 3) {
-
-
-		for (int i = first; i < first + count; i++)
-		{
-			printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
-		}
-
-		bounds = aabb(MAXFLOAT, MINFLOAT);
-		bounds.Reset();
-		for (int i = first; i < first + count; i++)
-		{
-			bounds.bmin3 = vec3::min(bounds.bmin3, primitives[i]->GetBounds().bmin3);
-			bounds.bmax3 = vec3::max(bounds.bmax3, primitives[i]->GetBounds().bmax3);
-			printf("Primitive position in this leaf: %f %f %f\n", primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
-			//bounds.Grow(primitives[i]->GetBounds());
-		}
-		printf("Bounds center: %f %f %f\n", bounds.Center(0), bounds.Center(1), bounds.Center(2));
-		return;
-	}
-
 	left = new BVHNode();
 	right = new BVHNode();
-	Partition(primitives);
-	left->Subdivide(primitives);
-	right->Subdivide(primitives);
-	bounds = aabb(vec3::min(left->bounds.bmin3, right->bounds.bmin3), vec3::max(left->bounds.bmax3, right->bounds.bmax3));
-	isLeaf = false;
+	bool subFurther = Partition(primitives);
+	if (subFurther) {
+		left->Subdivide(primitives);
+		right->Subdivide(primitives);
+		bounds = aabb(vec3::min(left->bounds.bmin3, right->bounds.bmin3), vec3::max(left->bounds.bmax3, right->bounds.bmax3));
+		isLeaf = false;
+	}
 }
 
+// Sort primitives for a given axis
 bool sortByAxis(Primitive* prim1, Primitive* prim2, int axis) {
 	return prim1->GetCenter()[axis] > prim2->GetCenter()[axis];
 }
 
-void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
+bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 {
-	//printf("Partitioning! First: %i, count: %i\n", first, count);
-	uint axis = bounds.LongestAxis();
-	float center = bounds.Center(axis);
-	//printf("Longest axis: %i; center: %f\n", axis, center);
-	//printf("Bounds axis extends: x %f y %f z %f\n", bounds.Extend(0), bounds.Extend(1), bounds.Extend(2));
-	//printf("Bounds values: bmax %f %f %f bmin %f %f %f\n", bounds.bmax3[0], bounds.bmax3[1], bounds.bmax3[2], bounds.bmin3[0], bounds.bmin3[1], bounds.bmin3[2]);
-
-	//now, with SAH!
-
 	// 1. Pick an axis
 	// 2. Sort all the primitives in the current node on axis coordinate
 	// 3. Create two AABB's
@@ -976,64 +954,68 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 	float bestSplitPosition = 0;
 	float bestSplitScore = MAXFLOAT;
 
-	timer tim = timer();
-	tim.reset();
+	// Get the current cost of the node bounds
+	bounds = aabb(MAXFLOAT, MINFLOAT);
+	bounds.Reset();
+	for (int i = first; i < first + count; i++)
+	{
+		bounds.bmin3 = vec3::min(bounds.bmin3, primitives[0][i]->GetBounds().bmin3);
+		bounds.bmax3 = vec3::max(bounds.bmax3, primitives[0][i]->GetBounds().bmax3);
+	}
+	float currentSplitScore = count * bounds.Area();
+
+	// Iterate through axes
 	for (int i = 0; i < 3; i++)
 	{
 		// Sort
-		std::sort(primitives.begin() + first, primitives.begin() + first + count, std::bind(sortByAxis, std::placeholders::_1, std::placeholders::_2, i));
+		std::sort(primitives->begin() + first, primitives->begin() + first + count, std::bind(sortByAxis, std::placeholders::_1, std::placeholders::_2, i));
+		
+		// AABB's
 		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
 		aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
 
+		// Iterate
 		for (int j = first + count - 1; j >= first; j--)
 		{
 			left.Reset();
 			for (int k = first; k < j; k++)
 			{
-				left.Grow(primitives[k]->GetBounds());
+				left.Grow(primitives[0][k]->GetBounds());
 			}
-			//printf("i: %f j: %f\n", i, j);
-			right.Grow(primitives[j]->GetBounds());
+			right.Grow(primitives[0][j]->GetBounds());
 
-			float SAHScore = left.Area() + right.Area();
+			// Keep track
+			float SAHScore = left.Area() * (j - first) + right.Area() * (first + count - j);
 			if (SAHScore < bestSplitScore) {
 				bestSplitAxis = i;
-				bestSplitPosition = primitives[j]->GetCenter()[i];
+				bestSplitPosition = primitives[0][j]->GetCenter()[i];
 				bestSplitScore = SAHScore;
 			}
 		}
 	}
-	printf("Timer time for SAH: %f. Final SAH score: %f. Best axis: %i Best position: %f\n", tim.elapsed(), bestSplitScore, bestSplitAxis, bestSplitPosition);
 
-	axis = bestSplitAxis;
-	center = bestSplitPosition;
+	// Check if splitting makes sense
+	if (bestSplitScore >= currentSplitScore) return false;
 
+	// Partition sort the primitives based on the found split
 	uint leftIndex = first, rightIndex = first + count - 1;
 
-	for (int i = first; i < first + count; i++)
-	{
-		printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
-	}
-
 	while (leftIndex < rightIndex) {
-		Primitive *p = primitives[leftIndex];
-		//printf("Triangle %i| Center: %f %f %f | bmax %f %f %f bmin %f %f %f\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2], p->GetBounds().bmax3[0], p->GetBounds().bmax3[1], p->GetBounds().bmax3[2], p->GetBounds().bmin3[0], p->GetBounds().bmin3[1], p->GetBounds().bmin3[2]);
-		if (p->GetCenter()[axis] <= center) {
+		Primitive *p = primitives[0][leftIndex];
+		if (p->GetCenter()[bestSplitAxis] <= bestSplitPosition) {
 			leftIndex++;
 		} else {
-			//in-place swap
-			swap(primitives[leftIndex], primitives[rightIndex]);
+			swap(primitives[0][leftIndex], primitives[0][rightIndex]);
 			rightIndex--;
 		}
 	}
 
-	Primitive *p = primitives[rightIndex];
-	//printf("Triangle %i| Center: %f %f %f | bmax %f %f %f bmin %f %f %f\n", leftIndex, p->GetCenter()[0], p->GetCenter()[1], p->GetCenter()[2], p->GetBounds().bmax3[0], p->GetBounds().bmax3[1], p->GetBounds().bmax3[2], p->GetBounds().bmin3[0], p->GetBounds().bmin3[1], p->GetBounds().bmin3[2]);
-	if (p->GetCenter()[axis] <= center) {
+	Primitive *p = primitives[0][rightIndex];
+	if (p->GetCenter()[bestSplitAxis] <= bestSplitPosition) {
 		leftIndex++;
 	}
 
-	//Ugly check
+	// Ugly check for resolving ties
 	if (leftIndex - first == 0) {
 		leftIndex++;
 	}
@@ -1041,32 +1023,14 @@ void Tmpl8::BVHNode::Partition(std::vector<Primitive *> primitives)
 		leftIndex--;
 	}
 
-	for (int i = first; i < first + count; i++)
-	{
-		printf("Element [%i]: %f %f %f\n", i, primitives[i]->GetCenter()[0], primitives[i]->GetCenter()[1], primitives[i]->GetCenter()[2]);
-	}
-
+	// Set data for child nodes
 	left->first = first;
 	left->count = leftIndex - first;
 	right->first = leftIndex;
 	right->count = first + count - leftIndex;
-	//left->bounds = left->CalculateBounds(primitives);
-	//right->bounds = right->CalculateBounds(primitives);
 
 	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
-}
-
-aabb Tmpl8::BVHNode::CalculateBounds(std::vector<Primitive*> primitives)
-{
-	aabb bounds = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
-	for (int i = first; i < first + count; i++)
-	{
-		bounds.Grow(primitives[i]->GetBounds());
-	}
-
-	//printf("Found bounds. MinX %f, MinY %f, MinZ %f, MaxX %f, MaxY %f, MaxZ %f\n", bounds.bmin3.x, bounds.bmin3.y, bounds.bmin3.z, bounds.bmax3.x, bounds.bmax3.y, bounds.bmax3.z);
-
-	return bounds;
+	return true;
 }
 
 float Tmpl8::Ray::AABBIntersect(aabb aabb)

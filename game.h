@@ -9,7 +9,7 @@
 #pragma region Settings
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
-#define SCENE 5
+#define SCENE 4
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
@@ -142,9 +142,8 @@ struct BVHNode
 	bool isLeaf = true;
 	BVHNode *left, *right;
 	int first, count;
-	void Subdivide(std::vector<Primitive *> primitives);
-	void Partition(std::vector<Primitive *> primitives);
-	aabb CalculateBounds(std::vector<Primitive *> primitives);
+	void Subdivide(std::vector<Primitive *> * primitives);
+	bool Partition(std::vector<Primitive *> * primitives);
 };
 
 class BVH
@@ -154,7 +153,7 @@ public:
 	BVHNode *pool;
 	uint poolIdx;
 	uint *indices;
-	void ConstructBVH( std::vector<Primitive *> primitives );
+	void ConstructBVH( std::vector<Primitive *> * primitives );
 };
 
 class Game
