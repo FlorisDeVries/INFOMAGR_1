@@ -8,6 +8,9 @@
 #include <numeric>
 
 #pragma region Settings
+#define USE_BVH
+//#define DRAW_DEPTH
+
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
 #define SCENE 4

@@ -2,8 +2,6 @@
 //#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "tiny_obj_loader.h"
 
-#define USE_BVH 1
-
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
@@ -18,7 +16,7 @@ void Game::Init()
 
 	const char *testCubePath = "assets/Obj/Test.obj";
 	const char *teapotPath = "assets/Obj/teapot.obj";
-	const char *bunnyPath = "assets/Obj/bunny.obj";
+	const char *dragonPath = "assets/Obj/dragon.obj";
 
 	switch ( SCENE )
 	{
@@ -85,9 +83,13 @@ void Game::Init()
 		break;
 	case 4:
 		// A scene to show the obj loader working, not really interactive
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 7));
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 14));
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 0));
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(7, -1.f, 7));
+		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( -7, -1.f, 7 ) );
 
-		//ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( 0, -1.f, 7 ) );
+
 		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
 
 
@@ -99,23 +101,7 @@ void Game::Init()
 		break;
 	case 5:
 		// SAH-testing scene
-		primitives.push_back(new Sphere(vec3(-30, 0, -3), 0.5f, vec3(1.f, .1f, .1f)));
-		primitives.push_back(new Sphere(vec3(-31, 0, -2), 0.5f, vec3(1.f, .1f, .1f)));
-		primitives.push_back(new Sphere(vec3(-30, 0, -2), 0.5f, vec3(1.f, .1f, .1f)));
-		primitives.push_back(new Sphere(vec3(-31, 0, -3), 0.5f, vec3(1.f, .1f, .1f)));
-
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 2), 1.f, vec3(.1f, 1.f, .1f)));
-
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-		primitives.push_back(new Sphere(vec3(-14.7f, 0, 30), 1.f, vec3(.1f, 1.f, .1f)));
-
-		primitives.push_back(new Sphere(vec3(3, 0, 2), 2.f, vec3(.1f, .1f, 1.f)));
+		ReadObj(dragonPath, primitives, vec3(.4f, 9.f, .2f), vec3(0, -2, 8));
 
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
 		break;
@@ -123,27 +109,13 @@ void Game::Init()
 		break;
 	}
 
+#ifdef USE_BVH
+	timer t = timer();
+	t.reset();
 	bvh = BVH();
 	bvh.ConstructBVH(&primitives);
-
-	/*std::stack<BVHNode> bvhNodes;
-	bvhNodes.push(bvh.root);
-	while (!bvhNodes.empty()) {
-		BVHNode node = bvhNodes.top();
-		bvhNodes.pop();
-		printf("Bounding box size: %f %f %f\n", node.bounds.bmax3.x - node.bounds.bmin3.x, node.bounds.bmax3.y - node.bounds.bmin3.y, node.bounds.bmax3.z - node.bounds.bmin3.z);
-		if (node.isLeaf) {
-			printf("Child count: %i | First: %i \n", node.count, node.first);
-			for (int i = node.first; i < node.first + node.count; i++)
-			{
-				printf("Child center: %f %f %f\n", primitives[i]->GetCenter().x, primitives[i]->GetCenter().y, primitives[i]->GetCenter().z);
-			}
-		}
-		else {
-			bvhNodes.push(*node.left);
-			bvhNodes.push(*node.right);
-		}
-	}*/
+	printf("BVH constructed in %f ms\n", t.elapsed());
+#endif // USE_BVH
 }
 
 // -----------------------------------------------------------
@@ -155,27 +127,25 @@ void Game::Shutdown()
 
 vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool shadowRay )
 {
+#ifdef USE_BVH
 	std::stack<BVHNode> bvhNodeStack;
 	bvhNodeStack.push(bvh.root);
 	uint depth = 0;
-#ifdef USE_BVH
+	int rayNodeIntersections = 0;
 	while (!bvhNodeStack.empty()) {
 		depth++;
-		//printf("Stack size: %i\n", bvhNodeStack.size());
+
+		// Get next node
 		BVHNode node = bvhNodeStack.top();
 		bvhNodeStack.pop();
-		//printf("New stack size: %i\n", bvhNodeStack.size());
-
 		float tmin = ray.AABBIntersect(node.bounds);
+
 		if (tmin > intersection.t || tmin < 0 || tmin == std::numeric_limits<float>::max()) continue;
-		//printf("SHOULD NOT COME HERE\n");
+
 		if (node.isLeaf) {
 			//Intersect with primitives
 			for (int i = node.first; i < node.first + node.count; i++)
-			{
-				depth++;
 				primitives[i]->Intersect(ray, intersection);
-			}
 		}
 		else {
 			//Push child nodes to stack
@@ -189,21 +159,22 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 			}
 		}
 }
-//	return vec3(min((depth * 10), 256u)/256.0f);
+#ifdef DRAW_DEPTH
+	return vec3(min((depth / 10), 256u)/256.0f);
+#endif
 #else
 
 	for (auto p : primitives)
 	{
 		p->Intersect(ray, intersection);
-	}	
+	}
+
 #endif
 	
 	for (auto p : nonBVHprimitives)
 	{
 		p->Intersect(ray, intersection);
 	}
-
-	
 
 	if (shadowRay) {
 		return 0;
@@ -907,20 +878,12 @@ vec3 Tmpl8::Triangle::GetCenter()
 
 void Tmpl8::BVH::ConstructBVH( std::vector<Primitive *> * primitives )
 {
-	// create index array	
-	uint N = primitives->size();
-	indices = new uint[N];
-	for ( int i = 0; i < N; i++ ) indices[i] = i;
 	// allocate BVH root node
-	pool = new BVHNode[N * 2 - 1];
-	root = pool[0];
-	poolIdx = 2; // Was een pointer? Met waarde 2??!?
+	root = BVHNode();
 	// subdivide root node
 	root.first = 0;
-	root.count = N;
+	root.count = primitives->size();
 	root.Subdivide(primitives);
-
-	printf("BVH DONE\n");
 }
 
 void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> * primitives)
@@ -931,7 +894,6 @@ void Tmpl8::BVHNode::Subdivide(std::vector<Primitive *> * primitives)
 	if (subFurther) {
 		left->Subdivide(primitives);
 		right->Subdivide(primitives);
-		bounds = aabb(vec3::min(left->bounds.bmin3, right->bounds.bmin3), vec3::max(left->bounds.bmax3, right->bounds.bmax3));
 		isLeaf = false;
 	}
 }
@@ -945,10 +907,12 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 {
 	// 1. Pick an axis
 	// 2. Sort all the primitives in the current node on axis coordinate
-	// 3. Create two AABB's
-	// 4. Iteratively put the primitives in the left/right box
-	// 5. Keep track of lowest split cost
-	// 6. Repeat for other axes
+	// 3. Create n bins
+	// 4. Calculate AABB's for bins
+	// 5. Create two AABB's
+	// 6. Iteratively add the bin AABB's to the left/right box
+	// 7. Keep track of lowest split cost
+	// 8. Repeat for other axes
 
 	int bestSplitAxis = 0;
 	float bestSplitPosition = 0;
@@ -959,9 +923,8 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	bounds.Reset();
 	for (int i = first; i < first + count; i++)
 	{
-		//bounds.bmin3 = vec3::min(bounds.bmin3, primitives[0][i]->GetBounds().bmin3);
-		//bounds.bmax3 = vec3::max(bounds.bmax3, primitives[0][i]->GetBounds().bmax3);
-		bounds.Grow(primitives[0][i]->GetBounds());
+		bounds.bmin3 = vec3::min(bounds.bmin3, primitives[0][i]->GetBounds().bmin3);
+		bounds.bmax3 = vec3::max(bounds.bmax3, primitives[0][i]->GetBounds().bmax3);
 	}
 	float currentSplitScore = count * bounds.Area();
 
@@ -970,12 +933,8 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	{
 		// Sort
 		std::sort(primitives->begin() + first, primitives->begin() + first + count, std::bind(sortByAxis, std::placeholders::_1, std::placeholders::_2, i));
-		for (int j = 0; j < 100; j++)
-		{
-			//printf("Center: %f\n", primitives[0][j]->GetCenter()[i]);
-		}
 		
-		// Iterate
+		// Binning
 		float interval = bounds.Extend(i) / min(100.0f, (float)count);
 		aabb* bins = new aabb[min(count, 100)];
 
@@ -993,10 +952,8 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 					{
 						binCounts[l] = binCounts[j];
 					}
-					//printf("For bin %i, stopped at primitive %i due to center %f being larger than max %f\n", j, k, primitives[0][k]->GetCenter()[i], max);
 					break;
 				}
-				//bins[j].Grow(primitives[0][k]->GetBounds());
 				bins[j].bmin3 = vec3::min(bins[j].bmin3, primitives[0][k]->GetBounds().bmin3);
 				bins[j].bmax3 = vec3::max(bins[j].bmax3, primitives[0][k]->GetBounds().bmax3);
 				binCounts[j]++;
@@ -1004,64 +961,39 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 		}
 		binCounts[min(100, count)] = count;
 
-		for (int j = 0; j < min(100, count) + 1; j++)
-		{
-			//printf("Bincount at bin %i: %i\n", j, binCounts[j]);
-		}
-
 		// AABB's for bins
 		aabb left = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
 		aabb right = aabb(vec3(MAXFLOAT), vec3(MINFLOAT));
 		right.Reset();
 
+		// Calculate best bin split
 		for (int j = min(100, count) - 1; j >= 0; j--)
 		{
 			left.Reset();
 			for (int k = 0; k < j; k++)
 			{
-				//left.Grow(bins[k]);
 				left.bmin3 = vec3::min(bins[k].bmin3, left.bmin3);
 				left.bmax3 = vec3::max(bins[k].bmax3, left.bmax3);
 
 			}
-			//right.Grow(bins[j]);
 
 			right.bmin3 = vec3::min(bins[j].bmin3, right.bmin3);
 			right.bmax3 = vec3::max(bins[j].bmax3, right.bmax3);
 
 			// Keep track
 			float SAHScore = left.Area() * binCounts[j] + right.Area() * (binCounts[min(100, count)] - binCounts[j]);
-			//printf("SAHScore: %f. LeftA: %f, RightA %f, LeftCount %i, RightCount %i, splitpos: lalala\n", SAHScore, left.Area(), right.Area(), binCounts[j], (binCounts[min(100, count)] - binCounts[j]), 0.1f);
+			
 			if (SAHScore < bestSplitScore) {
 				bestSplitAxis = i;
 				bestSplitPosition = primitives[0][first + binCounts[j] - 1]->GetCenter()[i];
 				bestSplitScore = SAHScore;
 			}
 		}
-		
-		//for (int j = first + count - 1; j >= first; j--)
-		//{
-		//	left.Reset();
-		//	for (int k = first; k < j; k++)
-		//	{
-		//		left.Grow(primitives[0][k]->GetBounds());
-		//	}
-		//	right.Grow(primitives[0][j]->GetBounds());
-
-		//	// Keep track
-		//	float SAHScore = left.Area() * (j - first) + right.Area() * (first + count - j);
-		//	if (SAHScore < bestSplitScore) {
-		//		bestSplitAxis = i;
-		//		bestSplitPosition = primitives[0][j]->GetCenter()[i];
-		//		bestSplitScore = SAHScore;
-		//	}
-		//}
 	}
 
 	// Check if splitting makes sense
 	if (bestSplitScore >= currentSplitScore) return false;
 
-	printf("Final SAH score: %f. Best axis: %i Best position: %f\n", bestSplitScore, bestSplitAxis, bestSplitPosition);
 	// Partition sort the primitives based on the found split
 	uint leftIndex = first, rightIndex = first + count - 1;
 
@@ -1134,5 +1066,5 @@ float Tmpl8::Ray::AABBIntersect(aabb aabb)
 	if (tzmax < tmax)
 		tmax = tzmax;
 
-	return tmin;
+	return max(tmin, 0.0f);
 }
