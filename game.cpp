@@ -89,19 +89,13 @@ void Game::Init()
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(7, -1.f, 7));
 		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( -7, -1.f, 7 ) );
 
-
-		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
-
-
-		//ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0, 0, -7 ), 0.f );
-
-		
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
 		break;
 	case 5:
 		// SAH-testing scene
 		ReadObj(dragonPath, primitives, vec3(.4f, 9.f, .2f), vec3(0, -2, 8));
+		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, 1.f, .2f), .4f, 0.0f, 1));
 
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
 		break;
@@ -183,7 +177,6 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 	if ( intersection.t < std::numeric_limits<float>::max() )
 	{ // Found some primitive
 		// Specularity
-		//printf("SHOULD NOT COME HERE 2.0\n");
 		if ( intersection.primitive->specularity > 0 && recursionDepth > 0 )
 		{
 			Ray reflectRay = Reflect( ray, intersection );
@@ -304,14 +297,12 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 		{
 			vec3 color = refractIntersect.primitive->GetColor( refractIntersect.position );
 			float r = exp( intersection.primitive->absorptionColor.x * -refractIntersect.t ), g = exp( intersection.primitive->absorptionColor.y * -refractIntersect.t ), b = exp( intersection.primitive->absorptionColor.z * -refractIntersect.t ); // Add rate
-			//float beersLaw = exp( 10e-6 * -refractIntersect.t );
 			refractColor *= vec3( r, g, b );
 		}
 	}
 
 	// Get reflect color
 	Ray reflectRay = Reflect( ray, intersection );
-	// reflectRay.origin = outside ? intersection.position + offset : intersection.position - offset; -> Offsets? Already included in reflect?
 	vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 );
 
 	// Combine reflect and refract
@@ -346,7 +337,6 @@ void Game::Tick( float deltaTime )
 //Threaded rays using OpenMP
 #pragma omp parallel for num_threads( THREADS )
 	for (int i = 0; i < THREADS; i++) { ThreadedRays(i); };
-	//printf("Frame %i done\n", frame);
 	HandleInput();
 
 	printf("Frametime (s): %f\n", t.elapsed()/1000.0f);
@@ -1027,7 +1017,7 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	right->count = first + count - leftIndex;
 
 	// Debug print
-	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
+	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n", left->first, left->count, right->first, right->count);
 	return true;
 }
 
