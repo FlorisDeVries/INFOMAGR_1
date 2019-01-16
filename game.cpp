@@ -23,21 +23,27 @@ void Game::Init()
 	case 1:
 #pragma region SimpleScene
 		// Simple scene
-		primitives.push_back( new Sphere( vec3( 0, 1, 1 ), 2.f, vec3( 1.0f ), 0.f, 1.5f ) );
-		primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
-		primitives.push_back( new Sphere( vec3( 2, 0, 5 ), 2.f, vec3( 1.f, 0.3f, 0.3f ), .6f, 0.0f ) );
-		primitives.push_back( new Sphere( vec3( -5, -1, 5 ), 1.5f, vec3( 1.f ), 1.f, .0f ) );
-		primitives.push_back( new Sphere( vec3( 18, 6, 15 ), 6.f, vec3( 1.f ), 0.f, .0f, 1, earth ) );
+		//primitives.push_back( new Sphere( vec3( 0, 1, 1 ), 2.f, vec3( 1.0f ), 0.f, 1.5f ) );
+		//primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
+		//primitives.push_back( new Sphere( vec3( 2, 0, 5 ), 2.f, vec3( 1.f, 0.3f, 0.3f ), .6f, 0.0f ) );
+		//primitives.push_back( new Sphere( vec3( -5, -1, 5 ), 1.5f, vec3( 1.f ), 1.f, .0f ) );
+		//primitives.push_back(new Sphere(vec3(18, 6, 15), 6.f, vec3(1.f), 0.f, .0f, 1, earth));
+
+		// Light sphere
+		primitives.push_back( new Sphere( vec3( 0, 2, 4 ), 4.f, vec3( 1.f ), 0.f, .0f, 1, 0, true ) );
 
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
-		nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+		//nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
+
+		//nonBVHprimitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(1.f, 1.f, 1.f), 0.f, 0.f, 1, 0, true));
+
 
 		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), .0f );
 		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
-		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
-		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
-		lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 0 ) ) );
+		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
+		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
+		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 0 ) ) );
 #pragma endregion
 		break;
 
@@ -89,19 +95,15 @@ void Game::Init()
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(7, -1.f, 7));
 		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( -7, -1.f, 7 ) );
 
+		printf("Number of primitives: %i\n", primitives.size());
 
-		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ) );
-
-
-		//ReadObj( bunnyPath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0, 0, -7 ), 0.f );
-
-		
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
 		lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
 		break;
 	case 5:
 		// SAH-testing scene
 		ReadObj(dragonPath, primitives, vec3(.4f, 9.f, .2f), vec3(0, -2, 8));
+		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, 1.f, .2f), .4f, 0.0f, 1));
 
 		lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
 		break;
@@ -116,6 +118,7 @@ void Game::Init()
 	bvh.ConstructBVH(&primitives);
 	printf("BVH constructed in %f ms\n", t.elapsed());
 #endif // USE_BVH
+	accumulator[SCRWIDTH * SCRHEIGHT] = { 0 };
 }
 
 // -----------------------------------------------------------
@@ -123,6 +126,32 @@ void Game::Init()
 // -----------------------------------------------------------
 void Game::Shutdown()
 {
+}
+
+vec3 randomHempsphereReflection(vec3 normal) {
+	vec3 randomUnitVector = vec3(2);
+	while (randomUnitVector.length() > 1) {
+		randomUnitVector.x = ((rand() % 1000) / 1000.0f) * 2 - 1;
+		randomUnitVector.y = ((rand() % 1000) / 1000.0f) * 2 - 1;
+		randomUnitVector.z = ((rand() % 1000) / 1000.0f) * 2 - 1;
+	}
+	if (randomUnitVector.dot(normal) < 0) randomUnitVector *= -1.0f;
+	return randomUnitVector.normalized();
+}
+
+vec3 Game::Sample(Ray r) {
+	if (r.recursionDepth == 0)
+		return vec3(0);
+	Intersection intersection = Intersection();
+	Trace(r, r.recursionDepth, intersection, true);
+	if (intersection.t == MAXFLOAT) return vec3(0); // ray left scene
+	if (intersection.primitive->isLight) { return intersection.primitive->color; printf("Hit light\n"); }  // ray hit light
+	vec3 reflectDir = randomHempsphereReflection(intersection.normal);
+	Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
+	reflectRay.recursionDepth = r.recursionDepth - 1;
+	vec3 Ei = Sample(reflectRay) * intersection.normal.dot(reflectRay.direction);
+	vec3 BRDF = intersection.primitive->color * (1.f / PI);
+	return PI * 2.0f * BRDF * Ei;
 }
 
 vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool shadowRay )
@@ -183,7 +212,6 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 	if ( intersection.t < std::numeric_limits<float>::max() )
 	{ // Found some primitive
 		// Specularity
-		//printf("SHOULD NOT COME HERE 2.0\n");
 		if ( intersection.primitive->specularity > 0 && recursionDepth > 0 )
 		{
 			Ray reflectRay = Reflect( ray, intersection );
@@ -304,14 +332,12 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 		{
 			vec3 color = refractIntersect.primitive->GetColor( refractIntersect.position );
 			float r = exp( intersection.primitive->absorptionColor.x * -refractIntersect.t ), g = exp( intersection.primitive->absorptionColor.y * -refractIntersect.t ), b = exp( intersection.primitive->absorptionColor.z * -refractIntersect.t ); // Add rate
-			//float beersLaw = exp( 10e-6 * -refractIntersect.t );
 			refractColor *= vec3( r, g, b );
 		}
 	}
 
 	// Get reflect color
 	Ray reflectRay = Reflect( ray, intersection );
-	// reflectRay.origin = outside ? intersection.position + offset : intersection.position - offset; -> Offsets? Already included in reflect?
 	vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 );
 
 	// Combine reflect and refract
@@ -328,7 +354,7 @@ void Game::Tick( float deltaTime )
 	timer t = timer();
 	t.reset();
 	// Clear the graphics window
-	screen->Clear( 0 );
+	//screen->Clear( 0 );
 	frame++;
 	// Reset the tile counter used in the camera for multithreading
 	cam->ResetCounter();
@@ -346,10 +372,45 @@ void Game::Tick( float deltaTime )
 //Threaded rays using OpenMP
 #pragma omp parallel for num_threads( THREADS )
 	for (int i = 0; i < THREADS; i++) { ThreadedRays(i); };
-	//printf("Frame %i done\n", frame);
+
+	//Copy the accumulator to the screen buffer
+	//TODO: Postprocessing?
+	uint* pointer = screen->GetBuffer();
+	for (int i = 0; i < SCRWIDTH * SCRHEIGHT + 1; i++)
+	{
+		//printf("%u\n", accumulator[i]);
+		*pointer = accumulator[i];
+		pointer++;
+	}
+
 	HandleInput();
 
 	printf("Frametime (s): %f\n", t.elapsed()/1000.0f);
+}
+
+uint EncodeColor(vec3 color) {
+	uint red = color.x;
+	uint green = color.y;
+	uint blue = color.z;
+
+	return (red << 16) + (green << 8) + blue;
+}
+
+vec3 DecodeColor(uint color) {
+	uint red = (color & REDMASK) >> 16;
+	uint green = (color & GREENMASK) >> 8;
+	uint blue = color & BLUEMASK;
+	
+	vec3 colorVec = vec3(red, green, blue);
+
+	return colorVec;
+}
+
+vec3 Game::BlendColor(vec3 oldColor, vec3 newColor) {
+	vec3 scaledColor = oldColor * (frame - 1);
+	vec3 totalColor = scaledColor + newColor;
+	vec3 averageColor = totalColor * (1.0f / frame);
+	return averageColor;
 }
 
 void Game::ThreadedRays( int i )
@@ -387,19 +448,51 @@ void Game::ThreadedRays( int i )
 		Pixel *pointer = screen->GetBuffer();
 		pointer += xstart + ystart * SCRWIDTH;
 
+		uint accumulatorPointer = 0;
+		accumulatorPointer += xstart + ystart * SCRWIDTH;
+
 		//Iterate over the tile
 		for ( int i = 0; i < yHeight; i++ )
 			for ( int j = 0; j < xHeight; j++ )
 			{
 				//printf("Pixel for pointer %i\n", pointer);
-				vec3 color = Trace( rayVector[i * yHeight + j], MAX_DEPTH );
+				//vec3 color = Trace( rayVector[i * yHeight + j], MAX_DEPTH );
+				vec3 color = Sample(rayVector[i * yHeight + j]);
 
 				uint red = sqrt( min( 1.0f, color.x ) ) * 255.0f;
 				uint green = sqrt( min( 1.0f, color.y ) ) * 255.0f;
 				uint blue = sqrt( min( 1.0f, color.z ) ) * 255.0f;
 
-				*pointer = ( red << 16 ) + ( green << 8 ) + ( blue );
+				vec3 newColorVec = vec3(red, green, blue);
+
+				// Using the screen buffer
+				uint oldColor = *pointer;
+				vec3 oldColorVec = DecodeColor(oldColor);
+
+				newColorVec += oldColorVec * (frame - 1);
+				newColorVec *= (1.0f / frame);
+
+				*pointer = EncodeColor(newColorVec);
 				pointer += ( j + 1 ) % xHeight == 0 ? ( SCRWIDTH - xHeight + 1 ) : 1;
+
+				//Using the accumulator
+				uint oldColor2 = accumulator[accumulatorPointer];
+				vec3 oldColor2Vec = DecodeColor(oldColor2);
+
+				uint newColor2 = EncodeColor((vec3(red, green, blue) + oldColor2Vec * (frame - 1)) * (1.0f / frame));
+				accumulator[accumulatorPointer] = newColor2;
+				//printf("acc %u\n", accumulatorPointer);
+				accumulatorPointer += (j + 1) % xHeight == 0 ? (SCRWIDTH - xHeight + 1) : 1;
+
+				//if (frame > 1 && oldColorVec.length() > 0) {
+				//	//printf("old color: %f %f %f\n", oldColorVec.x, oldColorVec.y, oldColorVec.z);
+				//}
+				//vec3 sumColor = (oldColorVec * (frame - 1) + newColorVec) * (1.0f / frame);
+
+				//red = sqrt(min(1.0f, oldColorVec.x)) * 255.0f;
+				//green = sqrt(min(1.0f, oldColorVec.y)) * 255.0f;
+				//blue = sqrt(min(1.0f, oldColorVec.z)) * 255.0f;
+				
 			}
 	}
 	//	printf("Tile done!\n");
@@ -655,6 +748,7 @@ std::tuple<int, std::vector<Ray>> Tmpl8::Camera::GetNextRays()
 		for ( int k = 0; k < xHeight; k++ )
 		{
 			Ray ray = GetRay( xstart + k, ystart + j );
+			ray.recursionDepth = MAX_DEPTH;
 			rayVector.push_back( ray );
 		}
 	}
@@ -776,7 +870,7 @@ aabb Tmpl8::Sphere::GetBounds()
 	return aabb(position - sqrtf(r2), position + sqrtf(r2));
 }
 
-Tmpl8::Plane::Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor, Surface *texture ) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor, texture )
+Tmpl8::Plane::Plane( vec3 normal, float dist, vec3 color, float specularity, float refractionIndex, vec3 absorptionColor, Surface *texture, bool isLight) : normal( normal.normalized() ), dist( dist ), Primitive( color, specularity, refractionIndex, absorptionColor, texture, isLight )
 {
 	UAxis = vec3( normal.y, normal.z, -normal.x );
 	VAxis = UAxis.cross( normal );
@@ -1027,7 +1121,7 @@ bool Tmpl8::BVHNode::Partition(std::vector<Primitive *> * primitives)
 	right->count = first + count - leftIndex;
 
 	// Debug print
-	printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n--\n", left->first, left->count, right->first, right->count);
+	//printf("Partitioning ready! Left first: %i, count: %i. Right first: %i, count: %i\n", left->first, left->count, right->first, right->count);
 	return true;
 }
 
