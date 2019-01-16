@@ -8,12 +8,12 @@
 #include <numeric>
 
 #pragma region Settings
-#define USE_BVH
+//#define USE_BVH
 //#define DRAW_DEPTH
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 3
-#define SCENE 5
+#define SCENE 1
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
@@ -34,6 +34,7 @@ class Ray
 	Ray( vec3 origin, vec3 direction ) : origin( origin ), direction( direction ){};
 	vec3 origin, direction;
 	float AABBIntersect(aabb aabb);
+	int recursionDepth;
 };
 
 class Primitive;
@@ -42,7 +43,7 @@ class Intersection
 {
   public:
 	vec3 position, normal;
-	float t = std::numeric_limits<float>::max();
+	float t = MAXFLOAT;
 	Primitive *primitive;
 	bool inside = false;
 };
@@ -50,6 +51,7 @@ class Intersection
 class Primitive
 {
   public:
+	bool isLight = false;
 	vec3 color, absorptionColor;
 	float specularity, refractionIndex = 0.0f;
 	virtual bool Intersect( Ray &ray, Intersection &intersection ) = 0;
@@ -59,13 +61,13 @@ class Primitive
 
   protected:
 	Surface *texture;
-	Primitive( vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : color( color ), specularity( specularity ), refractionIndex( refractionIndex ), absorptionColor( absorptionColor ), texture( texture ){};
+	Primitive( vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false ) : color( color ), specularity( specularity ), refractionIndex( refractionIndex ), absorptionColor( absorptionColor ), texture( texture ), isLight(isLight){};
 };
 
 class Sphere : public Primitive
 {
   public:
-	Sphere( vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
+	Sphere( vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture, isLight ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 	aabb GetBounds() override;
@@ -79,7 +81,7 @@ class Sphere : public Primitive
 class Plane : public Primitive
 {
   public:
-	Plane( vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 );
+	Plane( vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false);
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 	aabb GetBounds() override;
@@ -93,7 +95,7 @@ class Plane : public Primitive
 class Triangle : public Primitive
 {
   public:
-	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0 ) : v0( v0 ), v1( v1 ), v2( v2 ), normal( normal ), Primitive( color, specularity, refractionIndex, absorptionColor, texture ){};
+	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false ) : v0( v0 ), v1( v1 ), v2( v2 ), normal( normal ), Primitive( color, specularity, refractionIndex, absorptionColor, texture, isLight ){};
 	bool Intersect( Ray &ray, Intersection &intersection ) override;
 	vec3 GetColor( vec3 pos ) override;
 	aabb GetBounds() override;
@@ -172,11 +174,13 @@ class Game
 	void SetTarget( Surface *surface ) { screen = surface; }
 	void Init();
 	void Shutdown();
+	vec3 Sample(Ray r);
 	vec3 Trace( Ray ray, int recursionDepth, Intersection &intersection = Intersection(), bool shadowRay = false);
 	Ray Reflect( Ray &ray, Intersection &intersection );
 	vec3 DirectIllumination( Ray &ray, Intersection &intersection );
 	vec3 Refract( Ray &ray, Intersection &intersection, int recursionDepth );
 	void Tick( float deltaTime );
+	vec3 BlendColor(vec3 oldColor, vec3 newColor);
 	void ThreadedRays( int i );
 	void HandleInput();
 	bool ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0 );
@@ -213,6 +217,7 @@ class Game
   private:
 	BVH bvh;
 	Surface *screen;
+	uint accumulator[SCRWIDTH * SCRHEIGHT];
 	bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
 };
 
