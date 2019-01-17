@@ -7,6 +7,7 @@
 // -----------------------------------------------------------
 void Game::Init()
 {
+	frame = 0;
 	//Setting up the scene
 	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
 
@@ -116,7 +117,7 @@ void Game::Init()
 	bvh.ConstructBVH(&primitives);
 	printf("BVH constructed in %f ms\n", t.elapsed());
 #endif // USE_BVH
-	accumulator[SCRWIDTH * SCRHEIGHT] = { 0 };
+	accumulator[SCRWIDTH * SCRHEIGHT] = { vec3(0) };
 }
 
 // -----------------------------------------------------------
@@ -342,8 +343,6 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 	return reflectColor * refractRatio + refractColor * ( 1 - refractRatio );
 }
 
-static int frame = 0;
-
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
@@ -377,7 +376,11 @@ void Game::Tick( float deltaTime )
 	for (int i = 0; i < SCRWIDTH * SCRHEIGHT + 1; i++)
 	{
 		//printf("%u\n", accumulator[i]);
-		*pointer = accumulator[i];
+		vec3 colorVec = accumulator[i];
+		uint red = sqrt(min(1.0f, colorVec.x)) * 255.0f;
+		uint green = sqrt(min(1.0f, colorVec.y)) * 255.0f;
+		uint blue = sqrt(min(1.0f, colorVec.z)) * 255.0f;
+		*pointer = (red << 16) + (green << 8) + blue;
 		pointer++;
 	}
 
@@ -457,28 +460,11 @@ void Game::ThreadedRays( int i )
 				//vec3 color = Trace( rayVector[i * yHeight + j], MAX_DEPTH );
 				vec3 color = Sample(rayVector[i * yHeight + j]);
 
-				uint red = sqrt( min( 1.0f, color.x ) ) * 255.0f;
-				uint green = sqrt( min( 1.0f, color.y ) ) * 255.0f;
-				uint blue = sqrt( min( 1.0f, color.z ) ) * 255.0f;
-
-				vec3 newColorVec = vec3(red, green, blue);
-
-				// Using the screen buffer
-				uint oldColor = *pointer;
-				vec3 oldColorVec = DecodeColor(oldColor);
-
-				newColorVec += oldColorVec * (frame - 1);
-				newColorVec *= (1.0f / frame);
-
-				*pointer = EncodeColor(newColorVec);
-				pointer += ( j + 1 ) % xHeight == 0 ? ( SCRWIDTH - xHeight + 1 ) : 1;
-
 				//Using the accumulator
-				uint oldColor2 = accumulator[accumulatorPointer];
-				vec3 oldColor2Vec = DecodeColor(oldColor2);
+				vec3 oldColor = accumulator[accumulatorPointer];
 
-				uint newColor2 = EncodeColor((vec3(red, green, blue) + oldColor2Vec * (frame - 1)) * (1.0f / frame));
-				accumulator[accumulatorPointer] = newColor2;
+				vec3 newColor = (color + oldColor * (frame - 1)) * (1.0f / frame);
+				accumulator[accumulatorPointer] = newColor;
 				//printf("acc %u\n", accumulatorPointer);
 				accumulatorPointer += (j + 1) % xHeight == 0 ? (SCRWIDTH - xHeight + 1) : 1;
 
@@ -561,6 +547,11 @@ void Game::HandleInput()
 	// FOV
 	if ( isYDown && cam->FOV > 2.2f ) cam->FOV -= 0.1f;
 	if ( isHDown ) cam->FOV += 0.1f;
+
+	if (translation.sqrLentgh()!=0 || isYDown || isHDown) {
+		frame = 0;
+		std::fill(accumulator, accumulator + SCRWIDTH * SCRHEIGHT, 0);
+	}
 
 	cam->ResetFOV();
 	cam->ResetBounds();

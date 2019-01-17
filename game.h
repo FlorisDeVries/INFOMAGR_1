@@ -165,6 +165,7 @@ public:
 class Game
 {
   public:
+	int frame;
 	  std::vector<Primitive *> primitives;
 	  std::vector<Primitive *> nonBVHprimitives;
 	std::vector<Light *> lights;
@@ -208,6 +209,9 @@ class Game
 			target += left * xdif * SENSITIVITY + up * -ydif * SENSITIVITY;
 			cam->direction = ( target - cam->position ).normalized();
 			cam->ResetBounds();
+
+			frame = 0;
+			std::fill(accumulator, accumulator + SCRWIDTH * SCRHEIGHT, 0);
 		}
 	}
 
@@ -217,7 +221,7 @@ class Game
   private:
 	BVH bvh;
 	Surface *screen;
-	uint accumulator[SCRWIDTH * SCRHEIGHT];
+	vec3 accumulator[SCRWIDTH * SCRHEIGHT];
 	bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
 };
 
