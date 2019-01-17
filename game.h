@@ -12,7 +12,7 @@
 //#define DRAW_DEPTH
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 3
+#define MAX_DEPTH 5
 #define SCENE 1
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
@@ -175,6 +175,7 @@ class Game
 	void SetTarget( Surface *surface ) { screen = surface; }
 	void Init();
 	void Shutdown();
+	Ray RefractReflect(Ray ray, Intersection intersection);
 	vec3 Sample(Ray r);
 	vec3 Trace( Ray ray, int recursionDepth, Intersection &intersection = Intersection(), bool shadowRay = false);
 	Ray Reflect( Ray &ray, Intersection &intersection );

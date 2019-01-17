@@ -31,9 +31,14 @@ void Game::Init()
 		//primitives.push_back(new Sphere(vec3(18, 6, 15), 6.f, vec3(1.f), 0.f, .0f, 1, earth));
 
 		// Light sphere
-		primitives.push_back( new Sphere( vec3( 0, 2, 4 ), 4.f, vec3( 1.f ), 0.f, .0f, 1, 0, true ) );
+		//primitives.push_back(new Sphere(vec3(-4, 0, 4), 1.f, vec3(1.f), 0.f, .0f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(0, 0, 4), 1.f, vec3(1.f), 0.f, .0f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(4, 0, 4), 1.f, vec3(1.f), 1.f, .0f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(-4, 2, 4), 1.f, vec3(1.f, 0.1f, 0.1f), 0.f, 1.5f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(0, 4, 4), 1.f, vec3(10), 0.f, .0f, 1, 0, true));
+		primitives.push_back(new Sphere(vec3(4, 2, 4), 1.f, vec3(0.1f, 0.1f, 1.f), 1.f, .0f, 1, 0, false));
 
-		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
+		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 0, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1, planeTexture ) );
 		//nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		//nonBVHprimitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(1.f, 1.f, 1.f), 0.f, 0.f, 1, 0, true));
@@ -127,29 +132,115 @@ void Game::Shutdown()
 {
 }
 
+
+Ray Game::RefractReflect(Ray ray, Intersection intersection) {
+	// Prepare some values
+	float cosI = clamp(-1.f, 1.f, dot(ray.direction, intersection.normal));
+	vec3 n = intersection.normal;
+	float n1 = 1, n2 = intersection.primitive->refractionIndex;
+
+	if (intersection.inside)
+	{
+		std::swap(n1, n2);
+		n = -intersection.normal;
+	}
+	else
+	{
+		cosI *= -1.f;
+	}
+
+	// Calculate the reflect ratio
+	float sinT = n1 / n2 * sqrtf(std::max(0.f, 1 - cosI * cosI));
+	float refractRatio;
+	if (sinT >= 1)
+	{
+		refractRatio = 1;
+	}
+	else
+	{
+		float cosT = sqrtf(std::max(0.f, 1 - sinT * sinT));
+		cosI = fabsf(cosI);
+
+		float Rs = ((n2 * cosI) - (n1 * cosT)) / ((n2 * cosI) + (n1 * cosT));
+		float Rp = ((n1 * cosI) - (n2 * cosT)) / ((n1 * cosI) + (n2 * cosT));
+		refractRatio = (Rs * Rs + Rp * Rp) / 2;
+	}
+
+	// Calculate k
+	float n1n2 = n1 / n2;
+	float k = 1 - n1n2 * n1n2 * (1 - cosI * cosI);
+
+	// If there is some refraction, get refraction color
+	vec3 refractColor = 0;
+	float random = RandomFloat();
+	if (random < refractRatio) {
+		vec3 direction = (k < 0 ? 0 : n1n2 * ray.direction + (n1n2 * cosI - sqrtf(k)) * n).normalized();
+		vec3 origin = intersection.position + (direction * EPSILON);
+
+		Ray refractRay = Ray(origin, direction);
+		refractRay.recursionDepth = ray.recursionDepth - 1;
+
+		return refractRay;
+		//Intersection refractIntersect;
+		//refractColor = Trace(Ray(origin, direction), recursionDepth - 1, refractIntersect);
+
+		//if (refractIntersect.inside && refractIntersect.t < std::numeric_limits<float>::max())
+		//{
+		//	vec3 color = refractIntersect.primitive->GetColor(refractIntersect.position);
+		//	float r = exp(intersection.primitive->absorptionColor.x * -refractIntersect.t), g = exp(intersection.primitive->absorptionColor.y * -refractIntersect.t), b = exp(intersection.primitive->absorptionColor.z * -refractIntersect.t); // Add rate
+		//	refractColor *= vec3(r, g, b);
+		//}
+	} else {
+		// Get reflect color
+		Ray reflectRay = Reflect(ray, intersection);
+		reflectRay.recursionDepth = ray.recursionDepth - 1;
+		return reflectRay;
+	}
+}
+
 vec3 randomHempsphereReflection(vec3 normal) {
 	vec3 randomUnitVector = vec3(2);
 	while (randomUnitVector.length() > 1) {
-		randomUnitVector.x = ((rand() % 1000) / 1000.0f) * 2 - 1;
-		randomUnitVector.y = ((rand() % 1000) / 1000.0f) * 2 - 1;
-		randomUnitVector.z = ((rand() % 1000) / 1000.0f) * 2 - 1;
+		randomUnitVector.x = Rand(2) - 1;
+		randomUnitVector.y = Rand(2) - 1;
+		randomUnitVector.z = Rand(2) - 1;
 	}
 	if (randomUnitVector.dot(normal) < 0) randomUnitVector *= -1.0f;
 	return randomUnitVector.normalized();
 }
 
 vec3 Game::Sample(Ray r) {
+
 	if (r.recursionDepth == 0)
 		return vec3(0);
 	Intersection intersection = Intersection();
 	Trace(r, r.recursionDepth, intersection, true);
-	if (intersection.t == MAXFLOAT) return vec3(0); // ray left scene
-	if (intersection.primitive->isLight) { return intersection.primitive->color; printf("Hit light\n"); }  // ray hit light
+
+	if (intersection.t == MAXFLOAT) {
+		// Hit nothing
+		return vec3(0.01f, 0.01f, 0.1f);
+	}
+	if (intersection.primitive->isLight) { 
+		// Hit a light
+		return intersection.primitive->GetColor(intersection.position); printf("Hit light\n");
+	}  
+	if (intersection.primitive->specularity > 0) {
+		// Hit a specular
+		Ray reflectRay = Reflect(r, intersection);
+		reflectRay.recursionDepth--;
+		return intersection.primitive->GetColor(intersection.position) * Sample(reflectRay);
+	}
+	if (intersection.primitive->refractionIndex != 0) {
+		// Hit a dielectric
+		Ray refractRay = RefractReflect(r, intersection);
+		refractRay.recursionDepth--;
+		return intersection.primitive->GetColor(intersection.position) * Sample(refractRay);
+	}
 	vec3 reflectDir = randomHempsphereReflection(intersection.normal);
 	Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
 	reflectRay.recursionDepth = r.recursionDepth - 1;
 	vec3 Ei = Sample(reflectRay) * intersection.normal.dot(reflectRay.direction);
-	vec3 BRDF = intersection.primitive->color * (1.f / PI);
+	vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
 	return PI * 2.0f * BRDF * Ei;
 }
 
@@ -386,7 +477,7 @@ void Game::Tick( float deltaTime )
 
 	HandleInput();
 
-	printf("Frametime (s): %f\n", t.elapsed()/1000.0f);
+	printf("Frametime [frame %i] (s): %f\n", frame, t.elapsed()/1000.0f);
 }
 
 uint EncodeColor(vec3 color) {
