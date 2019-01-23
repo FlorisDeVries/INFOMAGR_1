@@ -254,10 +254,24 @@ std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection)
 }
 
 vec3 Game::Sample(Ray r, bool lastSpecular) {
+
+	float russian = 1.0f;
+#ifdef RUSSIAN_ROULETTE
+	// Russian roulette
+	float chance = 0.5f;
+	if (r.recursionDepth != MAX_DEPTH) {
+		if (RandomFloat() > chance) {
+			// Kill the ray
+			return 0;
+		}
+	}
+	russian = 1.0f / chance;
+#else
 	// If the recursion is at max,
 	// return 0
 	if (r.recursionDepth == 0)
 		return vec3(0);
+#endif
 
 	// Otherwise, trace the ray
 	Intersection intersection = Intersection();
@@ -291,7 +305,7 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
 		vec3 lightColor = 0;
 
-#ifdef VARIANCE_REDUCTION
+#ifdef NEE
 		// First, sample light explicitly
 		std::tuple<float, Primitive*> randomTuple = ChooseRandomLight(intersection);
 		Primitive *randomLight = std::get<1>(randomTuple);
@@ -319,7 +333,7 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		reflectRay.recursionDepth = r.recursionDepth - 1;
 		vec3 Ei = Sample(reflectRay, false) * intersection.normal.dot(reflectRay.direction);
 
-		return PI * 2.0f * BRDF * Ei + lightColor;
+		return russian * (PI * 2.0f * BRDF * Ei + lightColor);
 	}
 }
 

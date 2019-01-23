@@ -11,6 +11,10 @@
 //#define USE_BVH
 //#define DRAW_DEPTH
 #define VARIANCE_REDUCTION
+#ifdef VARIANCE_REDUCTION
+#define RUSSIAN_ROULETTE
+#define NEE
+#endif
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 5
