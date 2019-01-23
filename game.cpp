@@ -269,7 +269,7 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 	} else if (intersection.primitive->isLight) { 
 		// Hit a light
 #ifdef VARIANCE_REDUCTION
-		if(lastSpecular)
+		if(lastSpecular && intersection.normal.dot(-r.direction) > 0)
 			return intersection.primitive->GetColor(intersection.position);
 		else
 			return 0;
