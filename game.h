@@ -28,203 +28,213 @@
 
 namespace Tmpl8
 {
-class Ray
-{
-  public:
-	Ray( vec3 origin, vec3 direction ) : origin( origin ), direction( direction ){};
-	vec3 origin, direction;
-	float AABBIntersect(aabb aabb);
-	int recursionDepth;
-};
+	class Ray
+	{
+	public:
+		Ray(vec3 origin, vec3 direction) : origin(origin), direction(direction) {};
+		vec3 origin, direction;
+		float AABBIntersect(aabb aabb);
+		int recursionDepth;
+	};
 
-class Primitive;
+	class Primitive;
 
-class Intersection
-{
-  public:
-	vec3 position, normal;
-	float t = MAXFLOAT;
-	Primitive *primitive;
-	bool inside = false;
-};
+	class Intersection
+	{
+	public:
+		vec3 position, normal;
+		float t = MAXFLOAT;
+		Primitive *primitive;
+		bool inside = false;
+	};
 
-class Primitive
-{
-  public:
-	bool isLight = false;
-	vec3 color, absorptionColor;
-	float specularity, refractionIndex = 0.0f;
-	virtual bool Intersect( Ray &ray, Intersection &intersection ) = 0;
-	virtual vec3 GetColor( vec3 pos ) = 0;
-	virtual aabb GetBounds() = 0;
-	virtual vec3 GetCenter() = 0;
+	class Primitive
+	{
+	public:
+		bool isLight = false;
+		vec3 color, absorptionColor;
+		float specularity, refractionIndex = 0.0f;
+		virtual bool Intersect(Ray &ray, Intersection &intersection) = 0;
+		virtual vec3 GetColor(vec3 pos) = 0;
+		virtual aabb GetBounds() = 0;
+		virtual vec3 GetCenter() = 0;
+		virtual float SolidAngle(Intersection intersection) = 0;
+		virtual	vec3 RandomPointOnLight(Intersection intersection) = 0;
 
-  protected:
-	Surface *texture;
-	Primitive( vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false ) : color( color ), specularity( specularity ), refractionIndex( refractionIndex ), absorptionColor( absorptionColor ), texture( texture ), isLight(isLight){};
-};
+	protected:
+		Surface * texture;
+		Primitive(vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false) : color(color), specularity(specularity), refractionIndex(refractionIndex), absorptionColor(absorptionColor), texture(texture), isLight(isLight) {};
+	};
 
-class Sphere : public Primitive
-{
-  public:
-	Sphere( vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false ) : position( pos ), r2( r * r ), Primitive( color, specularity, refractionIndex, absorptionColor, texture, isLight ){};
-	bool Intersect( Ray &ray, Intersection &intersection ) override;
-	vec3 GetColor( vec3 pos ) override;
-	aabb GetBounds() override;
-	vec3 GetCenter() override { return position; };
+	class Sphere : public Primitive
+	{
+	public:
+		Sphere(vec3 pos, float r, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false) : position(pos), r2(r * r), Primitive(color, specularity, refractionIndex, absorptionColor, texture, isLight) { area = PI * r2; };
+		bool Intersect(Ray &ray, Intersection &intersection) override;
+		vec3 GetColor(vec3 pos) override;
+		aabb GetBounds() override;
+		vec3 GetCenter() override { return position; };
+		float SolidAngle(Intersection intersection) override;
+		vec3 RandomPointOnLight(Intersection intersection) override;
 
-  private:
-	vec3 position;
-	float r2;
-};
+	private:
+		float area;
+		vec3 position;
+		float r2;
+	};
 
-class Plane : public Primitive
-{
-  public:
-	Plane( vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false);
-	bool Intersect( Ray &ray, Intersection &intersection ) override;
-	vec3 GetColor( vec3 pos ) override;
-	aabb GetBounds() override;
-	vec3 GetCenter() override;
+	class Plane : public Primitive
+	{
+	public:
+		Plane(vec3 normal, float dist, vec3 color, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false);
+		bool Intersect(Ray &ray, Intersection &intersection) override;
+		vec3 GetColor(vec3 pos) override;
+		aabb GetBounds() override;
+		vec3 GetCenter() override;
+		float SolidAngle(Intersection intersection) override;
+		vec3 RandomPointOnLight(Intersection intersection) override;
 
-  private:
-	vec3 normal, UAxis, VAxis;
-	float dist;
-};
+	private:
+		vec3 normal, UAxis, VAxis;
+		float dist;
+	};
 
-class Triangle : public Primitive
-{
-  public:
-	Triangle( vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false ) : v0( v0 ), v1( v1 ), v2( v2 ), normal( normal ), Primitive( color, specularity, refractionIndex, absorptionColor, texture, isLight ){};
-	bool Intersect( Ray &ray, Intersection &intersection ) override;
-	vec3 GetColor( vec3 pos ) override;
-	aabb GetBounds() override;
-	vec3 GetCenter() override;
+	class Triangle : public Primitive
+	{
+	public:
+		Triangle(vec3 v0, vec3 v1, vec3 v2, vec3 normal, vec3 color = 1, float specularity = 0, float refractionIndex = 0, vec3 absorptionColor = 1, Surface *texture = 0, bool isLight = false);
+		bool Intersect(Ray &ray, Intersection &intersection) override;
+		vec3 GetColor(vec3 pos) override;
+		aabb GetBounds() override;
+		vec3 GetCenter() override;
+		float SolidAngle(Intersection intersection) override;
+		vec3 RandomPointOnLight(Intersection intersection) override;
 
-  private:
-	vec3 normal, v0, v1, v2;
-};
+	private:
+		vec3 normal, v0, v1, v2;
+		float area;
+	};
 
-class Camera
-{
-  public:
-	Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight );
-	Ray GetRay( int x, int y );
-	std::tuple<int, std::vector<Ray>> GetNextRays();
-	vec3 position, direction, screenTopLeft;
-	float FOV, aspectRatio;
-	int screenWidth, screenHeight;
-	void ResetBounds();
-	void ResetFOV();
-	void ResetCounter();
+	class Camera
+	{
+	public:
+		Camera(vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight);
+		Ray GetRay(int x, int y);
+		std::tuple<int, std::vector<Ray>> GetNextRays();
+		vec3 position, direction, screenTopLeft;
+		float FOV, aspectRatio;
+		int screenWidth, screenHeight;
+		void ResetBounds();
+		void ResetFOV();
+		void ResetCounter();
 
-  private:
-	std::atomic<int> rayCounter = 0;
-	float FOV_Distance;
-	vec3 screenCenter;
-	vec3 ScreenCorner( int corner = 0 );
-	vec3 xinc, yinc;
-};
+	private:
+		std::atomic<int> rayCounter = 0;
+		float FOV_Distance;
+		vec3 screenCenter;
+		vec3 ScreenCorner(int corner = 0);
+		vec3 xinc, yinc;
+	};
 
-class Light
-{
-  public:
-	Light( vec3 col, vec3 pos ) : color( col ), position( pos ){};
-	vec3 position;
-	vec3 color;
-	virtual bool InLoS() = 0;
-};
+	class Light
+	{
+	public:
+		Light(vec3 col, vec3 pos) : color(col), position(pos) {};
+		vec3 position;
+		vec3 color;
+		virtual bool InLoS() = 0;
+	};
 
-class PointLight : public Light
-{
-  public:
-	PointLight( vec3 col, vec3 pos ) : Light( col, pos ){};
-	inline bool InLoS() override { return true; }
-};
+	class PointLight : public Light
+	{
+	public:
+		PointLight(vec3 col, vec3 pos) : Light(col, pos) {};
+		inline bool InLoS() override { return true; }
+	};
 
-struct BVHNode
-{
-	aabb bounds;
-	bool isLeaf = true;
-	BVHNode *left, *right;
-	int first, count;
-	void Subdivide(std::vector<Primitive *> * primitives);
-	bool Partition(std::vector<Primitive *> * primitives);
-};
+	struct BVHNode
+	{
+		aabb bounds;
+		bool isLeaf = true;
+		BVHNode *left, *right;
+		int first, count;
+		void Subdivide(std::vector<Primitive *> * primitives);
+		bool Partition(std::vector<Primitive *> * primitives);
+	};
 
-class BVH
-{
-public:
-	BVHNode root;
-	BVHNode *pool;
-	uint poolIdx;
-	uint *indices;
-	void ConstructBVH( std::vector<Primitive *> * primitives );
-};
+	class BVH
+	{
+	public:
+		BVHNode root;
+		BVHNode *pool;
+		uint poolIdx;
+		uint *indices;
+		void ConstructBVH(std::vector<Primitive *> * primitives);
+	};
 
-class Game
-{
-  public:
-	int frame;
-	  std::vector<Primitive *> primitives;
-	  std::vector<Primitive *> nonBVHprimitives;
-	std::vector<Light *> lights;
-	Camera *cam;
-	bool mouseTurning;
+	class Game
+	{
+	public:
+		int frame;
+		std::vector<Primitive *> primitives;
+		std::vector<Primitive *> nonBVHprimitives;
+		std::vector<Primitive *> lights;
+		Camera *cam;
+		bool mouseTurning;
 
-	void SetTarget( Surface *surface ) { screen = surface; }
-	void Init();
-	void Shutdown();
-	Ray RefractReflect(Ray ray, Intersection intersection);
-	vec3 Sample(Ray r);
-	vec3 Trace( Ray ray, int recursionDepth, Intersection &intersection = Intersection(), bool shadowRay = false);
-	Ray Reflect( Ray &ray, Intersection &intersection );
-	vec3 DirectIllumination( Ray &ray, Intersection &intersection );
-	vec3 Refract( Ray &ray, Intersection &intersection, int recursionDepth );
-	void Tick( float deltaTime );
-	vec3 BlendColor(vec3 oldColor, vec3 newColor);
-	void ThreadedRays( int i );
-	void HandleInput();
-	bool ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0 );
-	void MouseUp( int button )
-	{ /* implement if you want to detect mouse button presses */
-		if ( button == SDL_BUTTON_RIGHT )
-			mouseTurning = false;
-	}
-	void MouseDown( int button )
-	{ /* implement if you want to detect mouse button presses */
-		if ( button == SDL_BUTTON_RIGHT )
-			mouseTurning = true;
-	}
-	void MouseMove( int x, int y )
-	{ /* implement if you want to detect mouse movement */
-		if ( mouseTurning )
-		{
-			//printf("Turning camera\n");
-			vec3 left = cross( cam->direction, vec3( 0, 1, 0 ) ).normalized();
-			vec3 up = cross( cam->direction, left ).normalized();
-			int xdif = -x;
-			int ydif = -y;
-
-			vec3 target = cam->position + cam->direction;
-			target += left * xdif * SENSITIVITY + up * -ydif * SENSITIVITY;
-			cam->direction = ( target - cam->position ).normalized();
-			cam->ResetBounds();
-
-			frame = 0;
-			std::fill(accumulator, accumulator + SCRWIDTH * SCRHEIGHT, 0);
+		void SetTarget(Surface *surface) { screen = surface; }
+		void Init();
+		void Shutdown();
+		Ray RefractReflect(Ray ray, Intersection intersection);
+		vec3 Sample(Ray r, bool lastSpecular);
+		vec3 Trace(Ray ray, int recursionDepth, Intersection &intersection = Intersection(), bool shadowRay = false);
+		Ray Reflect(Ray &ray, Intersection &intersection);
+		vec3 DirectIllumination(Ray &ray, Intersection &intersection);
+		vec3 Refract(Ray &ray, Intersection &intersection, int recursionDepth);
+		void Tick(float deltaTime);
+		vec3 BlendColor(vec3 oldColor, vec3 newColor);
+		void ThreadedRays(int i);
+		void HandleInput();
+		bool ReadObj(const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0);
+		void MouseUp(int button)
+		{ /* implement if you want to detect mouse button presses */
+			if (button == SDL_BUTTON_RIGHT)
+				mouseTurning = false;
 		}
-	}
+		void MouseDown(int button)
+		{ /* implement if you want to detect mouse button presses */
+			if (button == SDL_BUTTON_RIGHT)
+				mouseTurning = true;
+		}
+		void MouseMove(int x, int y)
+		{ /* implement if you want to detect mouse movement */
+			if (mouseTurning)
+			{
+				//printf("Turning camera\n");
+				vec3 left = cross(cam->direction, vec3(0, 1, 0)).normalized();
+				vec3 up = cross(cam->direction, left).normalized();
+				int xdif = -x;
+				int ydif = -y;
 
-	void KeyUp( int key );
-	void KeyDown( int key );
+				vec3 target = cam->position + cam->direction;
+				target += left * xdif * SENSITIVITY + up * -ydif * SENSITIVITY;
+				cam->direction = (target - cam->position).normalized();
+				cam->ResetBounds();
 
-  private:
-	BVH bvh;
-	Surface *screen;
-	vec3 accumulator[SCRWIDTH * SCRHEIGHT];
-	bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
-	float avgFrameTime = 0, peakFrameTime = 0;
-};
+				frame = 0;
+				std::fill(accumulator, accumulator + SCRWIDTH * SCRHEIGHT, 0);
+			}
+		}
+
+		void KeyUp(int key);
+		void KeyDown(int key);
+
+	private:
+		BVH bvh;
+		Surface *screen;
+		vec3 accumulator[SCRWIDTH * SCRHEIGHT];
+		bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
+		float avgFrameTime = 0, peakFrameTime = 0;
+	};
 
 }; // namespace Tmpl8
