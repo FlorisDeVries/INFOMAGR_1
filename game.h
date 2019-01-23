@@ -224,6 +224,7 @@ class Game
 	Surface *screen;
 	vec3 accumulator[SCRWIDTH * SCRHEIGHT];
 	bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
+	float avgFrameTime = 0, peakFrameTime = 0;
 };
 
 }; // namespace Tmpl8

@@ -9,7 +9,7 @@ void Game::Init()
 {
 	frame = 0;
 	//Setting up the scene
-	cam = new Camera( vec3( 0, 0, -8 ), vec3( 0, 0, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
+	cam = new Camera( vec3( 0, 2, -8 ), vec3( 0, 0, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
 
 	Surface *planeTexture = new Surface( "assets/Textures/PlaneTexture.jpg" );
 	Surface *earth = new Surface( "assets/Textures/earth.jpg" );
@@ -173,7 +173,7 @@ Ray Game::RefractReflect(Ray ray, Intersection intersection) {
 	// If there is some refraction, get refraction color
 	vec3 refractColor = 0;
 	float random = RandomFloat();
-	if (random < refractRatio) {
+	if (random > refractRatio) {
 		vec3 direction = (k < 0 ? 0 : n1n2 * ray.direction + (n1n2 * cosI - sqrtf(k)) * n).normalized();
 		vec3 origin = intersection.position + (direction * EPSILON);
 
@@ -181,15 +181,6 @@ Ray Game::RefractReflect(Ray ray, Intersection intersection) {
 		refractRay.recursionDepth = ray.recursionDepth - 1;
 
 		return refractRay;
-		//Intersection refractIntersect;
-		//refractColor = Trace(Ray(origin, direction), recursionDepth - 1, refractIntersect);
-
-		//if (refractIntersect.inside && refractIntersect.t < std::numeric_limits<float>::max())
-		//{
-		//	vec3 color = refractIntersect.primitive->GetColor(refractIntersect.position);
-		//	float r = exp(intersection.primitive->absorptionColor.x * -refractIntersect.t), g = exp(intersection.primitive->absorptionColor.y * -refractIntersect.t), b = exp(intersection.primitive->absorptionColor.z * -refractIntersect.t); // Add rate
-		//	refractColor *= vec3(r, g, b);
-		//}
 	} else {
 		// Get reflect color
 		Ray reflectRay = Reflect(ray, intersection);
@@ -210,38 +201,41 @@ vec3 randomHempsphereReflection(vec3 normal) {
 }
 
 vec3 Game::Sample(Ray r) {
-
+	// If the recursion is at max,
+	// return 0
 	if (r.recursionDepth == 0)
 		return vec3(0);
+
+	// Otherwise, trace the ray
 	Intersection intersection = Intersection();
 	Trace(r, r.recursionDepth, intersection, true);
 
 	if (intersection.t == MAXFLOAT) {
 		// Hit nothing
 		return vec3(0.01f, 0.01f, 0.1f);
-	}
-	if (intersection.primitive->isLight) { 
+	} else if (intersection.primitive->isLight) { 
 		// Hit a light
 		return intersection.primitive->GetColor(intersection.position); printf("Hit light\n");
-	}  
-	if (intersection.primitive->specularity > 0) {
+	} else if (intersection.primitive->specularity > 0) {
 		// Hit a specular
 		Ray reflectRay = Reflect(r, intersection);
 		reflectRay.recursionDepth--;
 		return intersection.primitive->GetColor(intersection.position) * Sample(reflectRay);
-	}
-	if (intersection.primitive->refractionIndex != 0) {
+	} else if (intersection.primitive->refractionIndex != 0) {
 		// Hit a dielectric
 		Ray refractRay = RefractReflect(r, intersection);
 		refractRay.recursionDepth--;
 		return intersection.primitive->GetColor(intersection.position) * Sample(refractRay);
 	}
-	vec3 reflectDir = randomHempsphereReflection(intersection.normal);
-	Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
-	reflectRay.recursionDepth = r.recursionDepth - 1;
-	vec3 Ei = Sample(reflectRay) * intersection.normal.dot(reflectRay.direction);
-	vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
-	return PI * 2.0f * BRDF * Ei;
+	else {
+		// Hit a diffuse surface
+		vec3 reflectDir = randomHempsphereReflection(intersection.normal);
+		Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
+		reflectRay.recursionDepth = r.recursionDepth - 1;
+		vec3 Ei = Sample(reflectRay) * intersection.normal.dot(reflectRay.direction);
+		vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
+		return PI * 2.0f * BRDF * Ei;
+	}
 }
 
 vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool shadowRay )
@@ -464,10 +458,12 @@ void Game::Tick( float deltaTime )
 	//Copy the accumulator to the screen buffer
 	//TODO: Postprocessing?
 	uint* pointer = screen->GetBuffer();
+	float energy = 0;
 	for (int i = 0; i < SCRWIDTH * SCRHEIGHT + 1; i++)
 	{
 		//printf("%u\n", accumulator[i]);
 		vec3 colorVec = accumulator[i];
+		energy += colorVec.sqrLentgh();
 		uint red = sqrt(min(1.0f, colorVec.x)) * 255.0f;
 		uint green = sqrt(min(1.0f, colorVec.y)) * 255.0f;
 		uint blue = sqrt(min(1.0f, colorVec.z)) * 255.0f;
@@ -476,6 +472,19 @@ void Game::Tick( float deltaTime )
 	}
 
 	HandleInput();
+
+	float frameTime = t.elapsed() / 1000.0f;
+	avgFrameTime = (avgFrameTime * (frame - 1) + frameTime) / frame;
+	if (frameTime > peakFrameTime) peakFrameTime = frameTime;
+
+	string s =   "Frame:  " + std::to_string(frame);
+	string e =	 "Energy: " + std::to_string(sqrt(energy));
+	string aft = "AFT:    " + std::to_string(avgFrameTime) + " s";
+	string pft = "PFT:    " + std::to_string(peakFrameTime) + " s";
+	screen->Print(&s.front(), 10, 10, 0xFFFFFF);
+	screen->Print(&e.front(), 10, 20, 0xFFFFFF);
+	screen->Print(&aft.front(), 10, 30, 0xFFFFFF);
+	screen->Print(&pft.front(), 10, 40, 0xFFFFFF);
 
 	printf("Frametime [frame %i] (s): %f\n", frame, t.elapsed()/1000.0f);
 }
@@ -547,27 +556,15 @@ void Game::ThreadedRays( int i )
 		for ( int i = 0; i < yHeight; i++ )
 			for ( int j = 0; j < xHeight; j++ )
 			{
-				//printf("Pixel for pointer %i\n", pointer);
 				//vec3 color = Trace( rayVector[i * yHeight + j], MAX_DEPTH );
 				vec3 color = Sample(rayVector[i * yHeight + j]);
 
 				//Using the accumulator
 				vec3 oldColor = accumulator[accumulatorPointer];
-
 				vec3 newColor = (color + oldColor * (frame - 1)) * (1.0f / frame);
+
 				accumulator[accumulatorPointer] = newColor;
-				//printf("acc %u\n", accumulatorPointer);
-				accumulatorPointer += (j + 1) % xHeight == 0 ? (SCRWIDTH - xHeight + 1) : 1;
-
-				//if (frame > 1 && oldColorVec.length() > 0) {
-				//	//printf("old color: %f %f %f\n", oldColorVec.x, oldColorVec.y, oldColorVec.z);
-				//}
-				//vec3 sumColor = (oldColorVec * (frame - 1) + newColorVec) * (1.0f / frame);
-
-				//red = sqrt(min(1.0f, oldColorVec.x)) * 255.0f;
-				//green = sqrt(min(1.0f, oldColorVec.y)) * 255.0f;
-				//blue = sqrt(min(1.0f, oldColorVec.z)) * 255.0f;
-				
+				accumulatorPointer += (j + 1) % xHeight == 0 ? (SCRWIDTH - xHeight + 1) : 1;				
 			}
 	}
 	//	printf("Tile done!\n");
@@ -639,13 +636,14 @@ void Game::HandleInput()
 	if ( isYDown && cam->FOV > 2.2f ) cam->FOV -= 0.1f;
 	if ( isHDown ) cam->FOV += 0.1f;
 
-	if (translation.sqrLentgh()!=0 || isYDown || isHDown) {
+	cam->ResetFOV();
+	cam->ResetBounds();
+
+	if (isHDown || isYDown || translation.sqrLentgh() != 0) {
+		// Reset the accumulator
 		frame = 0;
 		std::fill(accumulator, accumulator + SCRWIDTH * SCRHEIGHT, 0);
 	}
-
-	cam->ResetFOV();
-	cam->ResetBounds();
 }
 
 Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidth, int screenHeight ) : position( pos ), direction( dir ), FOV( FOV ), aspectRatio( aspectRatio ), screenWidth( screenWidth ), screenHeight( screenHeight )
