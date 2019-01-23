@@ -40,20 +40,34 @@ void Game::Init()
 		primitives.push_back(new Sphere(vec3(-4, 2, 4), 1.f, vec3(1.f, 0.1f, 0.1f), 0.f, 1.5f, 1, 0, false));
 		primitives.push_back(new Sphere(vec3(4, 2, 4), 1.f, vec3(0.1f, 0.1f, 1.f), 1.f, .0f, 1, 0, false));
 
-		// Emtitting primitives
-		Sphere *s = new Sphere(vec3(0, 4, 4), 1.f, vec3(10), 0.f, .0f, 1, 0, true);
-		primitives.push_back(s);
-		lights.push_back(s);
+		// Emitting primitives
+		//Sphere *s = new Sphere(vec3(-2, 4, 4), .5f, vec3(10), 0.f, .0f, 1, 0, true);
+		//primitives.push_back(s);
+		//lights.push_back(s);
 
-		lightsSAs = new float[1];
+		//Sphere *s2 = new Sphere(vec3(2, 4, 4), .5f, vec3(10), 0.f, .0f, 1, 0, true);
+		//primitives.push_back(s2);
+		//lights.push_back(s2);
+
+		//vec3 v0 = vec3(0, 6, 2);
+		//vec3 v1 = vec3(4, 6, 2);
+		//vec3 v2 = vec3(0, 6, 6);
+		//vec3 v3 = vec3(4, 6, 6);
+
+		//Triangle *t1 = new Triangle(v0, v3, v2, vec3(0, -1, 0), vec3(10), 0, 0, 1, 0, true);
+		//primitives.push_back(t1);
+		//lights.push_back(t1);
+
+		//Triangle *t2 = new Triangle(v0, v1, v3, vec3(0, -1, 0), vec3(10), 0, 0, 1, 0, true);
+		//primitives.push_back(t2);
+		//lights.push_back(t2);
 
 		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 0, vec3(1.f, .2f, .2f), .0f, 0.0f, 1, planeTexture));
 		//nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		//nonBVHprimitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(1.f, 1.f, 1.f), 0.f, 0.f, 1, 0, true));
 
-
-		//ReadObj( testCubePath, primitives, vec3( 1.f, .2f, .2f ), vec3( 0 ), .0f );
+		ReadObj( testCubePath, primitives, vec3( 10.f ), vec3( 0, 5, 2 ), .0f, true);
 		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
@@ -105,18 +119,18 @@ void Game::Init()
 		break;
 	case 4:
 		// A scene to show the obj loader working, not really interactive
-		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 7));
-		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 14));
-		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 0));
-		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(7, -1.f, 7));
-		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( -7, -1.f, 7 ) );
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 7), 0, false);
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 14), 0, false);
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 0), 0, false);
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(7, -1.f, 7), 0, false);
+		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( -7, -1.f, 7 ), 0, false);
 
 		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
 		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
 		break;
 	case 5:
 		// SAH-testing scene
-		ReadObj(dragonPath, primitives, vec3(.4f, 9.f, .2f), vec3(0, -2, 8));
+		ReadObj(dragonPath, primitives, vec3(.4f, 9.f, .2f), vec3(0, -2, 8), 0, false);
 		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, 1.f, .2f), .4f, 0.0f, 1));
 
 		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
@@ -222,6 +236,10 @@ std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection)
 		lightsSAs.push_back(SA);
 	}
 
+	// Check if any lights are visible
+	if (SAsum == 0)
+		return std::make_tuple(-1, lights[0]);
+
 	// Select a random light
 	float randomSA = Rand(SAsum);
 	int light = -1;
@@ -279,16 +297,20 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		Primitive *randomLight = std::get<1>(randomTuple);
 		float randomLightChance = std::get<0>(randomTuple);
 
-		vec3 randomLightPoint = randomLight->RandomPointOnLight(intersection);
-		vec3 randomLightDir = (randomLightPoint - intersection.position);
-		float randomLightDirLen = randomLightDir.length();
-		randomLightDir *= 1.0f / randomLightDirLen;
-		Ray lightRay = Ray(intersection.position + randomLightDir * EPSILON, randomLightDir);
-		Intersection lightIntersection = Intersection();
-		Trace(lightRay, 0, lightIntersection, true);
-		if (intersection.normal.dot(randomLightDir) > 0 && lightIntersection.t >= randomLightDirLen - EPSILON) {
-			// The light is not obstructed
-			lightColor = randomLight->GetColor(randomLightPoint) * randomLight->SolidAngle(intersection) * BRDF * intersection.normal.dot(randomLightDir) * (1.0f / randomLightChance);
+		if (randomLightChance > 0) {
+
+			vec3 randomLightPoint = randomLight->RandomPointOnLight(intersection);
+			vec3 randomLightDir = (randomLightPoint - intersection.position);
+			float randomLightDirLen = randomLightDir.length();
+			randomLightDir *= 1.0f / randomLightDirLen;
+			Ray lightRay = Ray(intersection.position + randomLightDir * EPSILON, randomLightDir);
+			Intersection lightIntersection = Intersection();
+			Trace(lightRay, 0, lightIntersection, true);
+
+			if (lightIntersection.primitive == randomLight) {
+				// The light is not obstructed
+				lightColor = randomLight->GetColor(randomLightPoint) * randomLight->SolidAngle(intersection) * BRDF * intersection.normal.dot(randomLightDir) * (1.0f / randomLightChance);
+			}
 		}
 #endif
 		// Then, sample the hemisphere
@@ -716,7 +738,7 @@ Camera::Camera( vec3 pos, vec3 dir, float FOV, float aspectRatio, int screenWidt
 	ResetBounds();
 }
 
-bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity )
+bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity, bool isLight, float scale)
 {
 #ifdef TINYOBJLOADER_IMPLEMENTATION
 	// tinyObj implementation, seems to be unable to parse files with "f v v v" format
@@ -789,7 +811,10 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 				if ( dot( normal, *temp_normals[0] ) < 0 )
 					normal = -normal;
 
-				primitives.push_back( new Triangle( vx + position, vy + position, vz + position, normal, color, specularity ) );
+				Triangle* triangle = new Triangle(vx + position, vy + position, vz + position, normal, color, specularity, 0, 1, 0, isLight);
+				primitives.push_back(triangle);
+				if (isLight)
+					lights.push_back(triangle);
 			}
 
 			// per-face material
@@ -846,12 +871,15 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 
 			vec3 v1v0 = vy - vx;
 			vec3 v2v0 = vz - vx;
-			vec3 normal = cross( v1v0, v2v0 );
+			vec3 normal = cross(v1v0, v2v0).normalized();
 
 			//if (dot(normal, *temp_normals[0]) < 0)
 			//	normal = -normal;
 
-			primitives.push_back( new Triangle( vx + position, vy + position, vz + position, normal, color, specularity ) );
+			Triangle* triangle = new Triangle(vx + position, vy + position, vz + position, normal, color, specularity, 0, 1, 0, isLight);
+			primitives.push_back(triangle);
+			if (isLight)
+				lights.push_back(triangle);
 		}
 	}
 	return true;
@@ -1030,7 +1058,6 @@ float Tmpl8::Sphere::SolidAngle(Intersection intersection)
 {
 	vec3 L = (GetCenter() - intersection.position);
 	float dist = L.length();
-	L *= 1.0f / dist;
 	float angle = (area) / (dist * dist);
 	return angle;
 }
@@ -1169,7 +1196,7 @@ float Tmpl8::Triangle::SolidAngle(Intersection intersection)
 	vec3 L = (GetCenter() - intersection.position);
 	float dist = L.length();
 	L *= 1.0f / dist;
-	float dot = normal.dot(L);
+	float dot = normal.dot(-L);
 	if (dot < 0)
 		return 0;
 	float angle = (dot * area) / (dist * dist);

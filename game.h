@@ -10,7 +10,7 @@
 #pragma region Settings
 //#define USE_BVH
 //#define DRAW_DEPTH
-//#define VARIANCE_REDUCTION
+#define VARIANCE_REDUCTION
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 5
@@ -193,11 +193,11 @@ namespace Tmpl8
 		Ray Reflect(Ray &ray, Intersection &intersection);
 		vec3 DirectIllumination(Ray &ray, Intersection &intersection);
 		vec3 Refract(Ray &ray, Intersection &intersection, int recursionDepth);
+		bool ReadObj(const char * path, std::vector<Primitive*>& primitives, vec3 color, vec3 position, float specularity, bool isLight, float scale = 1.0f);
 		void Tick(float deltaTime);
 		vec3 BlendColor(vec3 oldColor, vec3 newColor);
 		void ThreadedRays(int i);
 		void HandleInput();
-		bool ReadObj(const char *path, std::vector<Primitive *> &primitives, vec3 color, vec3 position, float specularity = 0);
 		void MouseUp(int button)
 		{ /* implement if you want to detect mouse button presses */
 			if (button == SDL_BUTTON_RIGHT)
