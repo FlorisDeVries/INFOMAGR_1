@@ -214,12 +214,12 @@ std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection)
 	// Get the SA for all the lights
 	int size = lights.size();
 	float SAsum = 0;
-	float *lightsSAs = new float[size];
+	std::vector<float> lightsSAs;
 	for (int i = 0; i < size; i++)
 	{
 		float SA = lights[i]->SolidAngle(intersection);
 		SAsum += SA;
-		lightsSAs[i] = SA;
+		lightsSAs.push_back(SA);
 	}
 
 	// Select a random light
@@ -272,37 +272,9 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 
 		// Hit a diffuse surface
 		// First, sample light explicitly
-		//std::tuple<float, Primitive*> randomTuple = ChooseRandomLight(intersection);
-		//Primitive *randomLight = std::get<1>(randomTuple);
-		//float randomLightChance = std::get<0>(randomTuple);
-
-		// Get the SA for all the lights
-		int size = lights.size();
-		float SAsum = 0;
-		//float *lightsSAs = new float[size];
-		for (int i = 0; i < size; i++)
-		{
-			float SA = lights[i]->SolidAngle(intersection);
-			SAsum += SA;
-			lightsSAs[i] = SA;
-		}
-
-		Primitive *randomLight;
-		float randomLightChance;
-
-		// Select a random light
-		float randomSA = Rand(SAsum);
-		int light = -1;
-		for (int i = 0; i < size; i++)
-		{
-			float SA = lightsSAs[i];
-			if (SA >= randomSA) {
-				randomLightChance = SA / SAsum;
-				randomLight = lights[i];
-				break;
-			}
-			randomSA -= SA;
-		}
+		std::tuple<float, Primitive*> randomTuple = ChooseRandomLight(intersection);
+		Primitive *randomLight = std::get<1>(randomTuple);
+		float randomLightChance = std::get<0>(randomTuple);
 
 		vec3 randomLightPoint = randomLight->RandomPointOnLight(intersection);
 		vec3 randomLightDir = (randomLightPoint - intersection.position);
