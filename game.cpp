@@ -36,7 +36,7 @@ void Game::Init()
 
 		// Non-emitting primitives
 		primitives.push_back(new Sphere(vec3(0, 0, 4), 1.f, vec3(1.f), 0.f, .0f, 1, 0, false));
-		primitives.push_back(new Sphere(vec3(4, 0, 4), 1.f, vec3(1.f), 0.f, .0f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(4, 0, 4), 1.f, vec3(1.f), 1.f, .0f, 1, 0, false));
 		primitives.push_back(new Sphere(vec3(-4, 2, 4), 1.f, vec3(1.f, 0.1f, 0.1f), 0.f, 1.5f, 1, 0, false));
 		primitives.push_back(new Sphere(vec3(4, 2, 4), 1.f, vec3(0.1f, 0.1f, 1.f), 1.f, .0f, 1, 0, false));
 
@@ -44,6 +44,8 @@ void Game::Init()
 		Sphere *s = new Sphere(vec3(0, 4, 4), 1.f, vec3(10), 0.f, .0f, 1, 0, true);
 		primitives.push_back(s);
 		lights.push_back(s);
+
+		lightsSAs = new float[1];
 
 		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 0, vec3(1.f, .2f, .2f), .0f, 0.0f, 1, planeTexture));
 		//nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
@@ -208,6 +210,33 @@ vec3 randomHempsphereReflection(vec3 normal) {
 	return randomUnitVector.normalized();
 }
 
+std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection) {
+	// Get the SA for all the lights
+	int size = lights.size();
+	float SAsum = 0;
+	float *lightsSAs = new float[size];
+	for (int i = 0; i < size; i++)
+	{
+		float SA = lights[i]->SolidAngle(intersection);
+		SAsum += SA;
+		lightsSAs[i] = SA;
+	}
+
+	// Select a random light
+	float randomSA = Rand(SAsum);
+	int light = -1;
+	for (int i = 0; i < size; i++)
+	{
+		float SA = lightsSAs[i];
+		if (SA >= randomSA) {
+			return std::make_tuple(SA / SAsum, lights[i]);
+		}
+		randomSA -= SA;
+	}
+
+	printf("ERROROROROORROROOROROORR\n");
+}
+
 vec3 Game::Sample(Ray r, bool lastSpecular) {
 	// If the recursion is at max,
 	// return 0
@@ -243,7 +272,38 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 
 		// Hit a diffuse surface
 		// First, sample light explicitly
-		Primitive *randomLight = lights[0];
+		//std::tuple<float, Primitive*> randomTuple = ChooseRandomLight(intersection);
+		//Primitive *randomLight = std::get<1>(randomTuple);
+		//float randomLightChance = std::get<0>(randomTuple);
+
+		// Get the SA for all the lights
+		int size = lights.size();
+		float SAsum = 0;
+		//float *lightsSAs = new float[size];
+		for (int i = 0; i < size; i++)
+		{
+			float SA = lights[i]->SolidAngle(intersection);
+			SAsum += SA;
+			lightsSAs[i] = SA;
+		}
+
+		Primitive *randomLight;
+		float randomLightChance;
+
+		// Select a random light
+		float randomSA = Rand(SAsum);
+		int light = -1;
+		for (int i = 0; i < size; i++)
+		{
+			float SA = lightsSAs[i];
+			if (SA >= randomSA) {
+				randomLightChance = SA / SAsum;
+				randomLight = lights[i];
+				break;
+			}
+			randomSA -= SA;
+		}
+
 		vec3 randomLightPoint = randomLight->RandomPointOnLight(intersection);
 		vec3 randomLightDir = (randomLightPoint - intersection.position);
 		float randomLightDirLen = randomLightDir.length();
@@ -254,7 +314,7 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		vec3 lightColor = 0;
 		if (intersection.normal.dot(randomLightDir) > 0 && lightIntersection.t >= randomLightDirLen - EPSILON) {
 			// The light is not obstructed
-			lightColor = randomLight->GetColor(randomLightPoint) * randomLight->SolidAngle(intersection) * BRDF * intersection.normal.dot(randomLightDir);
+			lightColor = randomLight->GetColor(randomLightPoint) * randomLight->SolidAngle(intersection) * BRDF * intersection.normal.dot(randomLightDir) * (1.0f / randomLightChance);
 		}
 
 		// Then, sample the hemisphere

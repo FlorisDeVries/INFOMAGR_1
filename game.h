@@ -186,6 +186,7 @@ namespace Tmpl8
 		void Init();
 		void Shutdown();
 		Ray RefractReflect(Ray ray, Intersection intersection);
+		std::tuple<float, Primitive*> ChooseRandomLight(Intersection i);
 		vec3 Sample(Ray r, bool lastSpecular);
 		vec3 Trace(Ray ray, int recursionDepth, Intersection &intersection = Intersection(), bool shadowRay = false);
 		Ray Reflect(Ray &ray, Intersection &intersection);
@@ -235,6 +236,7 @@ namespace Tmpl8
 		vec3 accumulator[SCRWIDTH * SCRHEIGHT];
 		bool isWDown = false, isADown = false, isSDown = false, isDDown = false, isRDown = false, isFDown = false, isYDown = false, isHDown = false;
 		float avgFrameTime = 0, peakFrameTime = 0;
+		float *lightsSAs;
 	};
 
 }; // namespace Tmpl8
