@@ -10,6 +10,7 @@
 #pragma region Settings
 //#define USE_BVH
 //#define DRAW_DEPTH
+//#define VARIANCE_REDUCTION
 
 #define EPSILON 0.001f
 #define MAX_DEPTH 5

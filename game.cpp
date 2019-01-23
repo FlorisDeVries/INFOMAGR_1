@@ -233,8 +233,6 @@ std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection)
 		}
 		randomSA -= SA;
 	}
-
-	printf("ERROROROROORROROOROROORR\n");
 }
 
 vec3 Game::Sample(Ray r, bool lastSpecular) {
@@ -252,10 +250,13 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		return vec3(0.01f, 0.01f, 0.1f);
 	} else if (intersection.primitive->isLight) { 
 		// Hit a light
+#ifdef VARIANCE_REDUCTION
 		if(lastSpecular)
 			return intersection.primitive->GetColor(intersection.position);
 		else
 			return 0;
+#endif
+		return intersection.primitive->GetColor(intersection.position);
 	} else if (intersection.primitive->specularity > 0) {
 		// Hit a specular
 		Ray reflectRay = Reflect(r, intersection);
@@ -268,9 +269,11 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		return intersection.primitive->GetColor(intersection.position) * Sample(refractRay, false);
 	}
 	else {
-		vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
-
 		// Hit a diffuse surface
+		vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
+		vec3 lightColor = 0;
+
+#ifdef VARIANCE_REDUCTION
 		// First, sample light explicitly
 		std::tuple<float, Primitive*> randomTuple = ChooseRandomLight(intersection);
 		Primitive *randomLight = std::get<1>(randomTuple);
@@ -283,12 +286,11 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		Ray lightRay = Ray(intersection.position + randomLightDir * EPSILON, randomLightDir);
 		Intersection lightIntersection = Intersection();
 		Trace(lightRay, 0, lightIntersection, true);
-		vec3 lightColor = 0;
 		if (intersection.normal.dot(randomLightDir) > 0 && lightIntersection.t >= randomLightDirLen - EPSILON) {
 			// The light is not obstructed
 			lightColor = randomLight->GetColor(randomLightPoint) * randomLight->SolidAngle(intersection) * BRDF * intersection.normal.dot(randomLightDir) * (1.0f / randomLightChance);
 		}
-
+#endif
 		// Then, sample the hemisphere
 		vec3 reflectDir = randomHempsphereReflection(intersection.normal);
 		Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
