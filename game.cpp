@@ -221,6 +221,18 @@ Ray Game::RefractReflect(Ray ray, Intersection intersection) {
 	}
 }
 
+vec3 randomCosineHemisphereReflection(vec3 normal) {
+	float r0 = RandomFloat(), r1 = RandomFloat();
+	float r = sqrt(r0);
+	float theta = 2.0f * PI * r1;
+	float x = r * cosf(theta);
+	float y = r * sinf(theta);
+	vec3 randomVector = vec3(x, y, sqrt(1 - r0));
+	if (randomVector.dot(normal) < 0)
+		randomVector *= -1.0f;
+	return randomVector.normalized();
+}
+
 vec3 randomHempsphereReflection(vec3 normal) {
 	vec3 randomUnitVector = vec3(2);
 	while (randomUnitVector.length() > 1) {
@@ -306,15 +318,16 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 	else {
 #ifdef RUSSIAN_ROULETTE
 		// Russian roulette
-		float chance = 0.5f;// clamp(max({ primitiveColor.x, primitiveColor.y, primitiveColor.z }), 0.0f, 1.0f);
+		float chance = clamp(max({ primitiveColor.x, primitiveColor.y, primitiveColor.z }), 0.0f, 1.0f);
 		if (r.recursionDepth != 0) {
-			if (RandomFloat() > chance || r.recursionDepth >= RUSSIAN_MAX) {
+			if (RandomFloat() > chance) {
 				// Kill the ray
 				return vec3(0);
 			}
+			russian = 1.0f / chance;
 		}
-		russian = 1.0f / chance;
 #endif
+
 		// Hit a diffuse surface
 		vec3 BRDF = primitiveColor * (1.f / PI);
 		vec3 lightColor = 0;
@@ -341,14 +354,22 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 			}
 		}
 #endif
-
 		// Then, sample the hemisphere
-		vec3 reflectDir = randomHempsphereReflection(intersection.normal);
+		vec3 reflectDir;
+		float PDF;
+
+#ifdef HEMISPHERE_IMPORTANCE
+		reflectDir = randomCosineHemisphereReflection(intersection.normal);
+		PDF = intersection.normal.dot(reflectDir) / PI;
+#else
+		reflectDir = randomHempsphereReflection(intersection.normal);
+		PDF = 1.0f / (2.0f * PI);
+#endif
 		Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
 		reflectRay.recursionDepth = r.recursionDepth + 1;
-		vec3 Ei = Sample(reflectRay, false) * intersection.normal.dot(reflectRay.direction);
+		vec3 Ei = Sample(reflectRay, false) * intersection.normal.dot(reflectRay.direction) * (1.0f / PDF);
 
-		return russian * (PI * 2.0f * BRDF * Ei + lightColor);
+		return russian * (BRDF * Ei + lightColor);
 	}
 }
 
