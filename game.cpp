@@ -9,7 +9,7 @@ void Game::Init()
 {
 	frame = 0;
 	//Setting up the scene
-	cam = new Camera( vec3( 0, 2, -8 ), vec3( 0, 0, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
+	cam = new Camera( vec3( 0, 3, -2 ), vec3( 0, -.5f, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
 
 	Surface *planeTexture = new Surface( "assets/Textures/PlaneTexture.jpg" );
 	Surface *earth = new Surface( "assets/Textures/earth.jpg" );
@@ -67,7 +67,15 @@ void Game::Init()
 
 		//nonBVHprimitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(1.f, 1.f, 1.f), 0.f, 0.f, 1, 0, true));
 
-		ReadObj( testCubePath, primitives, vec3( 10.f ), vec3( 0, 5, 2 ), .0f, true);
+		Triangle *t1 = new Triangle(vec3(-0.5f, 6.5f, 1.5f), vec3(0.5f, 6.5f, 1.5f), vec3(-0.5f, 6.5f, 2.5f), vec3(0.f, -1.f, 0.f), vec3(100.f), .0f, 0, 1, 0, true);
+		Triangle *t2 = new Triangle(vec3(-0.5f, 6.5f, 2.5f), vec3(0.5f, 6.5f, 1.5f), vec3(0.5f, 6.5f, 2.5f), vec3(0.f, -1.f, 0.f), vec3(100.f), .0f, 0, 1, 0, true);
+
+		primitives.push_back(t1);
+		primitives.push_back(t2);
+		lights.push_back(t1);
+		lights.push_back(t2);
+
+		//ReadObj( testCubePath, primitives, vec3( 100.f ), vec3( 0, 7, 2 ), .0f, true);
 		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
 		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
@@ -202,13 +210,13 @@ Ray Game::RefractReflect(Ray ray, Intersection intersection) {
 		vec3 origin = intersection.position + (direction * EPSILON);
 
 		Ray refractRay = Ray(origin, direction);
-		refractRay.recursionDepth = ray.recursionDepth - 1;
+		refractRay.recursionDepth = ray.recursionDepth + 1;
 
 		return refractRay;
 	} else {
 		// Get reflect color
 		Ray reflectRay = Reflect(ray, intersection);
-		reflectRay.recursionDepth = ray.recursionDepth - 1;
+		reflectRay.recursionDepth = ray.recursionDepth + 1;
 		return reflectRay;
 	}
 }
@@ -257,19 +265,10 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 
 	float russian = 1.0f;
 #ifdef RUSSIAN_ROULETTE
-	// Russian roulette
-	float chance = 0.5f;
-	if (r.recursionDepth != MAX_DEPTH) {
-		if (RandomFloat() > chance) {
-			// Kill the ray
-			return 0;
-		}
-	}
-	russian = 1.0f / chance;
 #else
 	// If the recursion is at max,
 	// return 0
-	if (r.recursionDepth == 0)
+	if (r.recursionDepth == MAX_DEPTH)
 		return vec3(0);
 #endif
 
@@ -279,30 +278,45 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 
 	if (intersection.t == MAXFLOAT) {
 		// Hit nothing
-		return vec3(0.01f, 0.01f, 0.1f);
-	} else if (intersection.primitive->isLight) { 
+		return 0;// vec3(0.01f, 0.01f, 0.1f);
+	}
+
+	vec3 primitiveColor = intersection.primitive->GetColor(intersection.position);
+
+	if (intersection.primitive->isLight) { 
 		// Hit a light
 #ifdef VARIANCE_REDUCTION
 		if(lastSpecular && intersection.normal.dot(-r.direction) > 0)
-			return intersection.primitive->GetColor(intersection.position);
+			return primitiveColor;
 		else
 			return 0;
 #endif
-		return intersection.primitive->GetColor(intersection.position);
+		return primitiveColor;
 	} else if (intersection.primitive->specularity > 0) {
 		// Hit a specular
 		Ray reflectRay = Reflect(r, intersection);
-		reflectRay.recursionDepth--;
-		return intersection.primitive->GetColor(intersection.position) * Sample(reflectRay, true);
+		reflectRay.recursionDepth = r.recursionDepth + 1;
+		return primitiveColor * Sample(reflectRay, true);
 	} else if (intersection.primitive->refractionIndex != 0) {
 		// Hit a dielectric
 		Ray refractRay = RefractReflect(r, intersection);
-		refractRay.recursionDepth--;
-		return intersection.primitive->GetColor(intersection.position) * Sample(refractRay, false);
+		refractRay.recursionDepth = r.recursionDepth + 1;
+		return primitiveColor * Sample(refractRay, true);
 	}
 	else {
+#ifdef RUSSIAN_ROULETTE
+		// Russian roulette
+		float chance = 0.5f;// clamp(max({ primitiveColor.x, primitiveColor.y, primitiveColor.z }), 0.0f, 1.0f);
+		if (r.recursionDepth != 0) {
+			if (RandomFloat() > chance || r.recursionDepth >= RUSSIAN_MAX) {
+				// Kill the ray
+				return vec3(0);
+			}
+		}
+		russian = 1.0f / chance;
+#endif
 		// Hit a diffuse surface
-		vec3 BRDF = intersection.primitive->GetColor(intersection.position) * (1.f / PI);
+		vec3 BRDF = primitiveColor * (1.f / PI);
 		vec3 lightColor = 0;
 
 #ifdef NEE
@@ -327,10 +341,11 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 			}
 		}
 #endif
+
 		// Then, sample the hemisphere
 		vec3 reflectDir = randomHempsphereReflection(intersection.normal);
 		Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
-		reflectRay.recursionDepth = r.recursionDepth - 1;
+		reflectRay.recursionDepth = r.recursionDepth + 1;
 		vec3 Ei = Sample(reflectRay, false) * intersection.normal.dot(reflectRay.direction);
 
 		return russian * (PI * 2.0f * BRDF * Ei + lightColor);
@@ -395,16 +410,16 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 	if ( intersection.t < std::numeric_limits<float>::max() )
 	{ // Found some primitive
 		// Specularity
-		if ( intersection.primitive->specularity > 0 && recursionDepth > 0 )
+		if ( intersection.primitive->specularity > 0 && recursionDepth < MAX_DEPTH )
 		{
 			Ray reflectRay = Reflect( ray, intersection );
-			vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 );
+			vec3 reflectColor = Trace( reflectRay, recursionDepth + 1 );
 			vec3 directIllumination = DirectIllumination( ray, intersection );
 			float ratio = intersection.primitive->specularity;
 			return reflectColor * ratio + ( 1 - ratio ) * intersection.primitive->color * directIllumination;
 		}
 		// Refract
-		else if ( intersection.primitive->refractionIndex > 0 && recursionDepth > 0 )
+		else if ( intersection.primitive->refractionIndex > 0 && recursionDepth < MAX_DEPTH )
 		{
 			return Refract( ray, intersection, recursionDepth );
 		}
@@ -464,7 +479,7 @@ vec3 Tmpl8::Game::DirectIllumination( Ray &ray, Intersection &intersection )
 
 vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDepth )
 {
-	if ( recursionDepth <= 0 )
+	if ( recursionDepth >= MAX_DEPTH )
 		return vec3( 0 );
 
 	// Prepare some values
@@ -510,7 +525,7 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 		vec3 direction = ( k < 0 ? 0 : n1n2 * ray.direction + ( n1n2 * cosI - sqrtf( k ) ) * n ).normalized();
 		vec3 origin = intersection.position + ( direction * EPSILON );
 		Intersection refractIntersect;
-		refractColor = Trace( Ray( origin, direction ), recursionDepth - 1, refractIntersect );
+		refractColor = Trace( Ray( origin, direction ), recursionDepth + 1, refractIntersect );
 
 		if ( refractIntersect.inside && refractIntersect.t < std::numeric_limits<float>::max() )
 		{
@@ -522,7 +537,7 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 
 	// Get reflect color
 	Ray reflectRay = Reflect( ray, intersection );
-	vec3 reflectColor = Trace( reflectRay, recursionDepth - 1 );
+	vec3 reflectColor = Trace( reflectRay, recursionDepth + 1 );
 
 	// Combine reflect and refract
 	return reflectColor * refractRatio + refractColor * ( 1 - refractRatio );
@@ -891,6 +906,12 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 			//	normal = -normal;
 
 			Triangle* triangle = new Triangle(vx + position, vy + position, vz + position, normal, color, specularity, 0, 1, 0, isLight);
+			if (normal.y < -0.9f) {
+				vec3 v1 = vx + position;
+				vec3 v2 = vy + position;
+				vec3 v3 = vz + position;
+				printf("v0: %f %f %f | v1: %f %f %f | v2: %f %f %f | n: %f %f %f", v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, normal);
+			}
 			primitives.push_back(triangle);
 			if (isLight)
 				lights.push_back(triangle);
@@ -932,7 +953,7 @@ std::tuple<int, std::vector<Ray>> Tmpl8::Camera::GetNextRays()
 		for ( int k = 0; k < xHeight; k++ )
 		{
 			Ray ray = GetRay( xstart + k, ystart + j );
-			ray.recursionDepth = MAX_DEPTH;
+			ray.recursionDepth = 0;
 			rayVector.push_back( ray );
 		}
 	}

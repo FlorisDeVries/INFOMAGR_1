@@ -17,7 +17,8 @@
 #endif
 
 #define EPSILON 0.001f
-#define MAX_DEPTH 5
+#define MAX_DEPTH 16
+#define RUSSIAN_MAX 255
 #define SCENE 1
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
