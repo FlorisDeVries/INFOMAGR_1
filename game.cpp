@@ -320,7 +320,7 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		// Russian roulette
 		float chance = clamp(max({ primitiveColor.x, primitiveColor.y, primitiveColor.z }), 0.0f, 1.0f);
 		if (r.recursionDepth != 0) {
-			if (RandomFloat() > chance) {
+			if (RandomFloat() > chance || r.recursionDepth >= RUSSIAN_MAX) {
 				// Kill the ray
 				return vec3(0);
 			}
@@ -927,12 +927,6 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 			//	normal = -normal;
 
 			Triangle* triangle = new Triangle(vx + position, vy + position, vz + position, normal, color, specularity, 0, 1, 0, isLight);
-			if (normal.y < -0.9f) {
-				vec3 v1 = vx + position;
-				vec3 v2 = vy + position;
-				vec3 v3 = vz + position;
-				printf("v0: %f %f %f | v1: %f %f %f | v2: %f %f %f | n: %f %f %f", v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, normal);
-			}
 			primitives.push_back(triangle);
 			if (isLight)
 				lights.push_back(triangle);
