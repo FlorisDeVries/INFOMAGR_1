@@ -9,7 +9,6 @@ void Game::Init()
 {
 	frame = 0;
 	//Setting up the scene
-	cam = new Camera( vec3( 0, 3, -2 ), vec3( 0, -.5f, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
 
 	Surface *planeTexture = new Surface( "assets/Textures/PlaneTexture.jpg" );
 	Surface *earth = new Surface( "assets/Textures/earth.jpg" );
@@ -25,14 +24,8 @@ void Game::Init()
 #pragma region SimpleScene
 	{
 		// Simple scene
-		//primitives.push_back( new Sphere( vec3( 0, 1, 1 ), 2.f, vec3( 1.0f ), 0.f, 1.5f ) );
-		//primitives.push_back( new Sphere( vec3( 0, -3.5f, 1 ), 2.f, vec3( 1.f ), 0.0f, 1.54f ) );
-		//primitives.push_back( new Sphere( vec3( 2, 0, 5 ), 2.f, vec3( 1.f, 0.3f, 0.3f ), .6f, 0.0f ) );
-		//primitives.push_back( new Sphere( vec3( -5, -1, 5 ), 1.5f, vec3( 1.f ), 1.f, .0f ) );
-		//primitives.push_back(new Sphere(vec3(18, 6, 15), 6.f, vec3(1.f), 0.f, .0f, 1, earth));
-
-		// Light sphere
-		//primitives.push_back(new Sphere(vec3(-4, 0, 4), 1.f, vec3(1.f), 0.f, .0f, 1, 0, false));
+		//Camera
+		cam = new Camera( vec3( 0, 3, -2 ), vec3( 0, -.5f, 1 ), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT );
 
 		// Non-emitting primitives
 		primitives.push_back(new Sphere(vec3(0, 0, 4), 1.f, vec3(1.f), 0.f, .0f, 1, 0, false));
@@ -40,33 +33,9 @@ void Game::Init()
 		primitives.push_back(new Sphere(vec3(-4, 2, 4), 1.f, vec3(1.f, 0.1f, 0.1f), 0.f, 1.5f, 1, 0, false));
 		primitives.push_back(new Sphere(vec3(4, 2, 4), 1.f, vec3(0.1f, 0.1f, 1.f), 1.f, .0f, 1, 0, false));
 
-		// Emitting primitives
-		//Sphere *s = new Sphere(vec3(-2, 4, 4), .5f, vec3(10), 0.f, .0f, 1, 0, true);
-		//primitives.push_back(s);
-		//lights.push_back(s);
-
-		//Sphere *s2 = new Sphere(vec3(2, 4, 4), .5f, vec3(10), 0.f, .0f, 1, 0, true);
-		//primitives.push_back(s2);
-		//lights.push_back(s2);
-
-		//vec3 v0 = vec3(0, 6, 2);
-		//vec3 v1 = vec3(4, 6, 2);
-		//vec3 v2 = vec3(0, 6, 6);
-		//vec3 v3 = vec3(4, 6, 6);
-
-		//Triangle *t1 = new Triangle(v0, v3, v2, vec3(0, -1, 0), vec3(10), 0, 0, 1, 0, true);
-		//primitives.push_back(t1);
-		//lights.push_back(t1);
-
-		//Triangle *t2 = new Triangle(v0, v1, v3, vec3(0, -1, 0), vec3(10), 0, 0, 1, 0, true);
-		//primitives.push_back(t2);
-		//lights.push_back(t2);
-
 		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 0, vec3(1.f, .2f, .2f), .0f, 0.0f, 1, planeTexture));
-		//nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 15, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
 
-		//nonBVHprimitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(1.f, 1.f, 1.f), 0.f, 0.f, 1, 0, true));
-
+		// Emitting primitives
 		Triangle *t1 = new Triangle(vec3(-0.5f, 6.5f, 1.5f), vec3(0.5f, 6.5f, 1.5f), vec3(-0.5f, 6.5f, 2.5f), vec3(0.f, -1.f, 0.f), vec3(100.f), .0f, 0, 1, 0, true);
 		Triangle *t2 = new Triangle(vec3(-0.5f, 6.5f, 2.5f), vec3(0.5f, 6.5f, 1.5f), vec3(0.5f, 6.5f, 2.5f), vec3(0.f, -1.f, 0.f), vec3(100.f), .0f, 0, 1, 0, true);
 
@@ -74,75 +43,100 @@ void Game::Init()
 		primitives.push_back(t2);
 		lights.push_back(t1);
 		lights.push_back(t2);
-
-		//ReadObj( testCubePath, primitives, vec3( 100.f ), vec3( 0, 7, 2 ), .0f, true);
-		//primitives.push_back( new Plane( vec3( 0, 1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f ) );
-
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 0 ) ) );
 #pragma endregion
 	}
 		break;
 
-	case 2:
+	case 2: {
 #pragma region ComplexScene
+		//Camera
+		cam = new Camera(vec3(0, 0, -8), vec3(0, 0, 1), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT);
+
 		//Spheres
-		primitives.push_back( new Sphere( vec3( 0, 0, 0 ), 2, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 1.5f, vec3( .5f, 2.3f, 2.3f ) ) );
-		primitives.push_back( new Sphere( vec3( 5, 0, 0 ), 2, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f, 1, earth ) );
-		primitives.push_back( new Sphere( vec3( -5, 4, 2.5f ), 3, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f, 1, eye ) );
-		primitives.push_back( new Sphere( vec3( -1, -6.5f, 4 ), 2.5f, vec3( 0.3f, 0.3f, 0.3f ), 0.0f, 0.0f, 1, eye ) );
+		primitives.push_back(new Sphere(vec3(0, 0, 0), 2, vec3(1.0f, 0.3f, 0.3f), 0.0f, 1.5f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(5, 0, 0), 2, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f, 1, earth));
+		primitives.push_back(new Sphere(vec3(-5, 4, 2.5f), 3, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f, 1, eye));
+		primitives.push_back(new Sphere(vec3(-1, -6.5f, 4), 2.5f, vec3(0.3f, 0.3f, 0.3f), 0.0f, 0.0f, 1, eye));
 
 		//Box
-		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
-		nonBVHprimitives.push_back( new Plane( vec3( -1, 0, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f, 1, planeTexture ) );
-		nonBVHprimitives.push_back( new Plane( vec3( 0, 0, 1 ), 10, vec3( 1.0f, 0.3f, 0.3f ), 0.0f, 0.0f ) );
-		nonBVHprimitives.push_back( new Plane( vec3( 0, 0, -1 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
-		nonBVHprimitives.push_back( new Plane( vec3( 0, 1, 0 ), 10, vec3( 0.3f, 1.0f, 0.3f ), 0.0f, 0.0f ) );
-		nonBVHprimitives.push_back( new Plane( vec3( 1, 0, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
+		nonBVHprimitives.push_back(new Plane(vec3(-1, 0, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f, 1, planeTexture));
+		nonBVHprimitives.push_back(new Plane(vec3(0, 0, 1), 10, vec3(1.0f, 0.3f, 0.3f), 0.0f, 0.0f));
+		nonBVHprimitives.push_back(new Plane(vec3(0, 0, -1), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
+		nonBVHprimitives.push_back(new Plane(vec3(0, 1, 0), 10, vec3(0.3f, 1.0f, 0.3f), 0.0f, 0.0f));
+		nonBVHprimitives.push_back(new Plane(vec3(1, 0, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
 
 		//Lights
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, 8, 8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, 8, 8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, -8, 8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, -8, 8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, 8, -8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( 8, -8, -8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, 8, -8 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY, LIGHTINTENSITY, LIGHTINTENSITY ), vec3( -8, -8, -8 ) ) );
-		//lights.push_back( new PointLight( vec3( 10 ), vec3( 0, 0, -8 ) ) );
+		Triangle *t1 = new Triangle(vec3(-0.5f, 9.9f, 1.5f), vec3(0.5f, 9.9f, 1.5f), vec3(-0.5f, 9.9f, 2.5f), vec3(0.f, -1.f, 0.f), vec3(100.f), .0f, 0, 1, 0, true);
+		Triangle *t2 = new Triangle(vec3(-0.5f, 9.9f, 2.5f), vec3(0.5f, 9.9f, 1.5f), vec3(0.5f, 9.9f, 2.5f), vec3(0.f, -1.f, 0.f), vec3(100.f), .0f, 0, 1, 0, true);
+
+		primitives.push_back(t1);
+		primitives.push_back(t2);
+		lights.push_back(t1);
+		lights.push_back(t2);
 #pragma endregion
-		break;
-	case 3:
+	} break;
+	case 3: {
 		// Scene for Beer's law
-		primitives.push_back( new Sphere( vec3( -4, -1.f, 1 ), 4.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
-		primitives.push_back( new Sphere( vec3( 2, -3.f, 1 ), 2.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
-		primitives.push_back( new Sphere( vec3( 5, -4.f, 1 ), 1.f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
-		primitives.push_back( new Sphere( vec3( 7, -4.5f, 1 ), .5f, vec3( 1.f, .2f, .2f ), 0.0f, 1.54f, vec3( .5f, 2.3f, 2.3f ) ) );
+		//Camera
+		cam = new Camera(vec3(0, 0, -10), vec3(0, 0, 1), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT);
 
-		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 10, vec3( 0.3f, 0.3f, 1.0f ), 0.0f, 0.0f ) );
+		//Primitives
+		primitives.push_back(new Sphere(vec3(-4, -1.f, 1), 4.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(2, -3.f, 1), 2.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(5, -4.f, 1), 1.f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
+		primitives.push_back(new Sphere(vec3(7, -4.5f, 1), .5f, vec3(1.f, .2f, .2f), 0.0f, 1.54f, vec3(.5f, 2.3f, 2.3f)));
 
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 0, 20, 0 ) ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY ), vec3( 2, 0, -2 ) ) );
-		break;
-	case 4:
+		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 10, vec3(0.3f, 0.3f, 1.0f), 0.0f, 0.0f));
+
+		//Light
+		Sphere* sphereLight = new Sphere(vec3(0, 17, 0), 2, vec3(10), 0.0f, 0.0f, 1, 0, true);
+		primitives.push_back(sphereLight);
+		lights.push_back(sphereLight);
+	} break;
+	case 4: {
 		// A scene to show the obj loader working, not really interactive
+		//Camera
+		cam = new Camera(vec3(0, 0, -10), vec3(0, 0, 1), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT);
+
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 7), 0, false);
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 14), 0, false);
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(0, -1.f, 0), 0, false);
 		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(7, -1.f, 7), 0, false);
-		ReadObj( teapotPath, primitives, vec3( .2f, 1.f, .2f ), vec3( -7, -1.f, 7 ), 0, false);
+		ReadObj(teapotPath, primitives, vec3(.2f, 1.f, .2f), vec3(-7, -1.f, 7), 0, false);
 
-		nonBVHprimitives.push_back( new Plane( vec3( 0, -1, 0 ), 5, vec3( 1.f, .2f, .2f ), .0f, 0.0f, 1 ) );
-		//lights.push_back( new PointLight( vec3( LIGHTINTENSITY * 10 ), vec3( 3, 10, -5 ) ) );
-		break;
-	case 5:
-		// SAH-testing scene
-		ReadObj(dragonPath, primitives, vec3(.4f, 9.f, .2f), vec3(0, -2, 8), 0, false);
-		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, 1.f, .2f), .4f, 0.0f, 1));
+		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, .2f, .2f), .0f, 0.0f, 1));
 
-		//lights.push_back(new PointLight(vec3(LIGHTINTENSITY * 10), vec3(3, 10, -5)));
-		break;
+		//Light
+		Sphere* sphereLight = new Sphere(vec3(0, 17, 0), 2, vec3(10), 0.0f, 0.0f, 1, 0, true);
+		primitives.push_back(sphereLight);
+		lights.push_back(sphereLight);
+	}break;
+	case 5: {
+		// Everything
+		//Camera
+		cam = new Camera(vec3(0, -2, -10), vec3(0, 0, 1), 4.0f, 1.0f, SCRWIDTH, SCRHEIGHT);
+
+		// Dragon and plane
+		ReadObj(dragonPath, primitives, vec3(.8f, .9f, .2f), vec3(0, -2, 8), 0, false);
+		nonBVHprimitives.push_back(new Plane(vec3(0, -1, 0), 5, vec3(1.f, 0.3f, .2f), .4f, 0.0f, 1));
+		primitives.push_back(new Sphere(vec3(-9, -5, 4), 1, vec3(1), 1.0f, 0.0f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(9, -5, 4), 1, vec3(1), 0.0f, 0.0f, 1, 0, false));
+		primitives.push_back(new Sphere(vec3(0, -5, 1), 1, vec3(1), 0.0f, 1.5f, 1, 0, false));
+
+		//Light
+		Sphere* sphereLightRight = new Sphere(vec3(-9, -3, 4), 1, vec3(10, 0, 0), 0.0f, 0.0f, 1, 0, true);
+		primitives.push_back(sphereLightRight);
+		lights.push_back(sphereLightRight);
+
+		Sphere* sphereLightLeft = new Sphere(vec3(9, -3, 4), 1, vec3(0, 10, 0), 0.0f, 0.0f, 1, 0, true);
+		primitives.push_back(sphereLightLeft);
+		lights.push_back(sphereLightLeft);
+
+		Sphere* sphereLightCentre = new Sphere(vec3(0, -3, 1), 1, vec3(0, 0, 4), 0.0f, 0.0f, 1, 0, true);
+		primitives.push_back(sphereLightCentre);
+		lights.push_back(sphereLightCentre);
+	}break;
 	default:
 		break;
 	}
@@ -164,7 +158,7 @@ void Game::Shutdown()
 {
 }
 
-
+// Get either a refracted or reflected ray, for dielectric materials
 Ray Game::RefractReflect(Ray ray, Intersection intersection) {
 	// Prepare some values
 	float cosI = clamp(-1.f, 1.f, dot(ray.direction, intersection.normal));
@@ -221,6 +215,7 @@ Ray Game::RefractReflect(Ray ray, Intersection intersection) {
 	}
 }
 
+// Get a cosine-weighted random diffuse reflection
 vec3 randomCosineHemisphereReflection(vec3 normal) {
 	float r0 = RandomFloat(), r1 = RandomFloat();
 	float r = sqrt(r0);
@@ -233,6 +228,7 @@ vec3 randomCosineHemisphereReflection(vec3 normal) {
 	return randomVector.normalized();
 }
 
+// Get a uniformally random diffuse reflection
 vec3 randomHempsphereReflection(vec3 normal) {
 	vec3 randomUnitVector = vec3(2);
 	while (randomUnitVector.length() > 1) {
@@ -244,6 +240,8 @@ vec3 randomHempsphereReflection(vec3 normal) {
 	return randomUnitVector.normalized();
 }
 
+// Get a random light, based on solid angle
+// Returns chance the random light was chosen and light
 std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection) {
 	// Get the SA for all the lights
 	int size = lights.size();
@@ -266,16 +264,16 @@ std::tuple<float, Primitive*> Game::ChooseRandomLight(Intersection intersection)
 	for (int i = 0; i < size; i++)
 	{
 		float SA = lightsSAs[i];
-		if (SA >= randomSA) {
+		if (i == size - 1 || SA >= randomSA) {
 			return std::make_tuple(SA / SAsum, lights[i]);
 		}
 		randomSA -= SA;
 	}
 }
 
+// Samples a ray
 vec3 Game::Sample(Ray r, bool lastSpecular) {
 
-	float russian = 1.0f;
 #ifdef RUSSIAN_ROULETTE
 #else
 	// If the recursion is at max,
@@ -290,14 +288,15 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 
 	if (intersection.t == MAXFLOAT) {
 		// Hit nothing
-		return 0;// vec3(0.01f, 0.01f, 0.1f);
+		return 0;
 	}
 
+	// Prepare the color of the hit primitive
 	vec3 primitiveColor = intersection.primitive->GetColor(intersection.position);
 
 	if (intersection.primitive->isLight) { 
 		// Hit a light
-#ifdef VARIANCE_REDUCTION
+#ifdef NEE
 		if(lastSpecular && intersection.normal.dot(-r.direction) > 0)
 			return primitiveColor;
 		else
@@ -316,11 +315,13 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		return primitiveColor * Sample(refractRay, true);
 	}
 	else {
+		// Hit a diffuse surface
+	float russian = 1.0f;
 #ifdef RUSSIAN_ROULETTE
-		// Russian roulette
-		float chance = clamp(max({ primitiveColor.x, primitiveColor.y, primitiveColor.z }), 0.0f, 1.0f);
+		// Russian roulette, based on primitive color
 		if (r.recursionDepth != 0) {
-			if (RandomFloat() > chance || r.recursionDepth >= RUSSIAN_MAX) {
+			float chance = clamp(max({ primitiveColor.x, primitiveColor.y, primitiveColor.z }), 0.0f, 1.0f);
+			if (RandomFloat() > chance || r.recursionDepth >= RUSSIAN_MAX || chance == 0.0f) {
 				// Kill the ray
 				return vec3(0);
 			}
@@ -328,7 +329,7 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		}
 #endif
 
-		// Hit a diffuse surface
+		// Prepare some values
 		vec3 BRDF = primitiveColor * (1.f / PI);
 		vec3 lightColor = 0;
 
@@ -338,12 +339,10 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		Primitive *randomLight = std::get<1>(randomTuple);
 		float randomLightChance = std::get<0>(randomTuple);
 
+		// If a light was found, trace it
 		if (randomLightChance > 0) {
-
 			vec3 randomLightPoint = randomLight->RandomPointOnLight(intersection);
-			vec3 randomLightDir = (randomLightPoint - intersection.position);
-			float randomLightDirLen = randomLightDir.length();
-			randomLightDir *= 1.0f / randomLightDirLen;
+			vec3 randomLightDir = (randomLightPoint - intersection.position).normalized();
 			Ray lightRay = Ray(intersection.position + randomLightDir * EPSILON, randomLightDir);
 			Intersection lightIntersection = Intersection();
 			Trace(lightRay, 0, lightIntersection, true);
@@ -368,6 +367,8 @@ vec3 Game::Sample(Ray r, bool lastSpecular) {
 		Ray reflectRay = Ray(intersection.position + reflectDir * EPSILON, reflectDir);
 		reflectRay.recursionDepth = r.recursionDepth + 1;
 		vec3 Ei = Sample(reflectRay, false) * intersection.normal.dot(reflectRay.direction) * (1.0f / PDF);
+
+		// Fianlly, return the Russian-roulette weighted sampled color
 
 		return russian * (BRDF * Ei + lightColor);
 	}
@@ -456,6 +457,8 @@ vec3 Game::Trace( Ray ray, int recursionDepth, Intersection &intersection, bool 
 		return vec3( ( 6.0f * 16 + 4 ) / 256, ( 16.0f * 9 + 5 ) / 256, ( 16.0f * 14 + 13 ) / 256 ); // Cornflower blue
 	}
 }
+
+#pragma region RAYTRACER_LEGACY
 
 Ray Tmpl8::Game::Reflect( Ray &ray, Intersection &intersection )
 {
@@ -564,6 +567,8 @@ vec3 Tmpl8::Game::Refract( Ray &ray, Intersection &intersection, int recursionDe
 	return reflectColor * refractRatio + refractColor * ( 1 - refractRatio );
 }
 
+#pragma endregion
+
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
@@ -591,13 +596,12 @@ void Game::Tick( float deltaTime )
 #pragma omp parallel for num_threads( THREADS )
 	for (int i = 0; i < THREADS; i++) { ThreadedRays(i); };
 
-	//Copy the accumulator to the screen buffer
-	//TODO: Postprocessing?
+	// Copy the accumulator to the screen buffer
+	// and keep track of energy for measuring purposes
 	uint* pointer = screen->GetBuffer();
 	float energy = 0;
 	for (int i = 0; i < SCRWIDTH * SCRHEIGHT + 1; i++)
 	{
-		//printf("%u\n", accumulator[i]);
 		vec3 colorVec = accumulator[i];
 		energy += colorVec.sqrLentgh();
 		uint red = sqrt(min(1.0f, colorVec.x)) * 255.0f;
@@ -609,6 +613,8 @@ void Game::Tick( float deltaTime )
 
 	HandleInput();
 
+	// Debug information
+	
 	float frameTime = t.elapsed() / 1000.0f;
 	avgFrameTime = (avgFrameTime * (frame - 1) + frameTime) / frame;
 	if (frameTime > peakFrameTime) peakFrameTime = frameTime;
@@ -623,31 +629,6 @@ void Game::Tick( float deltaTime )
 	screen->Print(&pft.front(), 10, 40, 0xFFFFFF);
 
 	printf("Frametime [frame %i] (s): %f\n", frame, t.elapsed()/1000.0f);
-}
-
-uint EncodeColor(vec3 color) {
-	uint red = color.x;
-	uint green = color.y;
-	uint blue = color.z;
-
-	return (red << 16) + (green << 8) + blue;
-}
-
-vec3 DecodeColor(uint color) {
-	uint red = (color & REDMASK) >> 16;
-	uint green = (color & GREENMASK) >> 8;
-	uint blue = color & BLUEMASK;
-	
-	vec3 colorVec = vec3(red, green, blue);
-
-	return colorVec;
-}
-
-vec3 Game::BlendColor(vec3 oldColor, vec3 newColor) {
-	vec3 scaledColor = oldColor * (frame - 1);
-	vec3 totalColor = scaledColor + newColor;
-	vec3 averageColor = totalColor * (1.0f / frame);
-	return averageColor;
 }
 
 void Game::ThreadedRays( int i )
@@ -681,10 +662,7 @@ void Game::ThreadedRays( int i )
 		int xstart = tileIdx % sqTiles * xHeight;
 		int ystart = tileIdx / sqTiles * yHeight;
 
-		//The first pixel of the tile passed
-		Pixel *pointer = screen->GetBuffer();
-		pointer += xstart + ystart * SCRWIDTH;
-
+		//The first pixel of the tile passed in the accumulator
 		uint accumulatorPointer = 0;
 		accumulatorPointer += xstart + ystart * SCRWIDTH;
 
@@ -692,10 +670,10 @@ void Game::ThreadedRays( int i )
 		for ( int i = 0; i < yHeight; i++ )
 			for ( int j = 0; j < xHeight; j++ )
 			{
-				//vec3 color = Trace( rayVector[i * yHeight + j], MAX_DEPTH );
+				// Sample the pixel
 				vec3 color = Sample(rayVector[i * yHeight + j], true);
 
-				//Using the accumulator
+				// Update the accumulator
 				vec3 oldColor = accumulator[accumulatorPointer];
 				vec3 newColor = (color + oldColor * (frame - 1)) * (1.0f / frame);
 
@@ -703,7 +681,6 @@ void Game::ThreadedRays( int i )
 				accumulatorPointer += (j + 1) % xHeight == 0 ? (SCRWIDTH - xHeight + 1) : 1;				
 			}
 	}
-	//	printf("Tile done!\n");
 }
 
 void Game::KeyUp( int key )
@@ -922,9 +899,6 @@ bool Tmpl8::Game::ReadObj( const char *path, std::vector<Primitive *> &primitive
 			vec3 v1v0 = vy - vx;
 			vec3 v2v0 = vz - vx;
 			vec3 normal = cross(v1v0, v2v0).normalized();
-
-			//if (dot(normal, *temp_normals[0]) < 0)
-			//	normal = -normal;
 
 			Triangle* triangle = new Triangle(vx + position, vy + position, vz + position, normal, color, specularity, 0, 1, 0, isLight);
 			primitives.push_back(triangle);

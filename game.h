@@ -8,8 +8,7 @@
 #include <numeric>
 
 #pragma region Settings
-//#define USE_BVH
-//#define DRAW_DEPTH
+#define USE_BVH
 #define VARIANCE_REDUCTION
 #ifdef VARIANCE_REDUCTION
 #define RUSSIAN_ROULETTE
@@ -20,7 +19,7 @@
 #define EPSILON 0.001f
 #define MAX_DEPTH 16
 #define RUSSIAN_MAX 255
-#define SCENE 1
+#define SCENE 5
 #define MOVEMENTRATE 1.0f
 #define SENSITIVITY 0.003f
 
@@ -30,8 +29,8 @@
 #define TILES 1024 // Keep as a power of an even number
 #pragma endregion
 
-#define MAXFLOAT 1e34f //std::numeric_limits<float>::max()
-#define MINFLOAT -1e34f //std::numeric_limits<float>::min()
+#define MAXFLOAT 1e34f
+#define MINFLOAT -1e34f
 
 namespace Tmpl8
 {
@@ -201,7 +200,6 @@ namespace Tmpl8
 		vec3 Refract(Ray &ray, Intersection &intersection, int recursionDepth);
 		bool ReadObj(const char * path, std::vector<Primitive*>& primitives, vec3 color, vec3 position, float specularity, bool isLight, float scale = 1.0f);
 		void Tick(float deltaTime);
-		vec3 BlendColor(vec3 oldColor, vec3 newColor);
 		void ThreadedRays(int i);
 		void HandleInput();
 		void MouseUp(int button)
